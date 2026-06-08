@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  DOCTOR
+  PATIENT
+}
+
+enum AppointmentStatus {
+  PENDING
+  WAITING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum FileType {
+  PDF
+  JPG
+  PNG
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role     @default(PATIENT)
+  isActive     Boolean  @default(true) @map("is_active")
+  refreshToken String?  @map("refresh_token")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  patient   Patient?
+  doctor    Doctor?
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+model Patient {
+  id               String   @id @default(uuid())
+  userId           String   @unique @map("user_id")
+  dni              String   @unique
+  firstName        String   @map("first_name")
+  lastName         String   @map("last_name")
+  birthDate        DateTime @map("birth_date")
+  medicalInsurance String?  @map("medical_insurance")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+  evolutions   Evolution[]
+  studies      Study[]
+
+  @@map("patients")
+}
+
+model Doctor {
+  id            String  @id @default(uuid())
+  userId        String  @unique @map("user_id")
+  firstName     String  @map("first_name")
+  lastName      String  @map("last_name")
+  licenseNumber String  @unique @map("license_number")
+  specialty     String
+  isVerified    Boolean @default(false) @map("is_verified")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@map("doctors")
+}
+
+model Appointment {
+  id          String            @id @default(uuid())
+  patientId   String            @map("patient_id")
+  doctorId    String            @map("doctor_id")
+  scheduledAt DateTime          @map("scheduled_at")
+  status      AppointmentStatus @default(PENDING)
+  roomUuid    String            @unique @default(uuid()) @map("room_uuid")
+  notes       String?
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  patient      Patient       @relation(fields: [patientId], references: [id])
+  doctor       Doctor        @relation(fields: [doctorId], references: [id])
+  evolution    Evolution?
+  prescription Prescription?
+
+  @@index([doctorId, scheduledAt])
+  @@index([patientId])
+  @@map("appointments")
+}
+
+model Evolution {
+  id            String    @id @default(uuid())
+  appointmentId String    @unique @map("appointment_id")
+  patientId     String    @map("patient_id")
+  // soapData shape: { subjective, objective, assessment: { text, cie10Codes: string[] }, plan, _signatureHash? }
+  soapData      Json      @map("soap_data")
+  isSigned      Boolean   @default(false) @map("is_signed")
+  signedAt      DateTime? @map("signed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  patient     Patient     @relation(fields: [patientId], references: [id])
+
+  @@map("evolutions")
+}
+
+model Study {
+  id         String   @id @default(uuid())
+  patientId  String   @map("patient_id")
+  title      String
+  fileKey    String   @map("file_key")
+  fileType   FileType @map("file_type")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@map("studies")
+}
+
+model Prescription {
+  id                   String   @id @default(uuid())
+  appointmentId        String   @unique @map("appointment_id")
+  // medicationPayload shape: { medications: [{name, dose, frequency, duration, notes}], instructions }
+  medicationPayload    Json     @map("medication_payload")
+  digitalSignatureHash String   @map("digital_signature_hash")
+  issuedAt             DateTime @default(now()) @map("issued_at")
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+
+  @@map("prescriptions")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  ip        String
+  action    String
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
