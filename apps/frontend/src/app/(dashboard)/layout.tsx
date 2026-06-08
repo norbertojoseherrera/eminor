@@ -10,15 +10,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace('/login');
-    }
+    if (!loading && !user) router.replace('/login');
   }, [user, loading, router]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground text-sm">Cargando...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 rounded-xl bg-primary mx-auto flex items-center justify-center text-white font-bold shadow-sm">E</div>
+          <p className="text-sm text-muted-foreground">Cargando...</p>
+        </div>
       </div>
     );
   }
@@ -26,9 +27,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) return null;
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
+      {/* pt-16 en mobile (top bar) + pb-20 (bottom nav), lg: sin padding */}
+      <main className="flex-1 overflow-auto pt-16 pb-20 lg:pt-0 lg:pb-0">
         {children}
       </main>
     </div>

@@ -6,25 +6,20 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { Appointment } from '@/types';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
-const STATUS_COLORS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  PENDING: 'secondary',
-  WAITING: 'default',
-  ACTIVE: 'default',
-  COMPLETED: 'outline',
-  CANCELLED: 'destructive',
+const STATUS_COLORS: Record<string, string> = {
+  PENDING:   'bg-amber-100 text-amber-800 border-amber-200',
+  WAITING:   'bg-blue-100 text-blue-800 border-blue-200',
+  ACTIVE:    'bg-emerald-100 text-emerald-800 border-emerald-200',
+  COMPLETED: 'bg-stone-100 text-stone-600 border-stone-200',
+  CANCELLED: 'bg-red-100 text-red-700 border-red-200',
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'Pendiente',
-  WAITING: 'En Espera',
-  ACTIVE: 'En Curso',
-  COMPLETED: 'Completado',
-  CANCELLED: 'Cancelado',
+  PENDING: 'Pendiente', WAITING: 'En Espera', ACTIVE: 'En Curso',
+  COMPLETED: 'Completado', CANCELLED: 'Cancelado',
 };
 
 export default function DoctorSchedulePage() {
@@ -36,7 +31,7 @@ export default function DoctorSchedulePage() {
 
   const doctorId = user?.doctor?.id;
 
-  const fetchAppointments = () => {
+  const fetch = () => {
     if (!doctorId) return;
     setLoading(true);
     api.get<Appointment[]>(`/appointments?doctorId=${doctorId}&date=${date}`)
@@ -45,73 +40,69 @@ export default function DoctorSchedulePage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => {
-    fetchAppointments();
-  }, [doctorId, date]);
+  useEffect(() => { fetch(); }, [doctorId, date]);
 
-  const startConsultation = async (appt: Appointment) => {
+  const start = async (appt: Appointment) => {
     try {
       await api.patch(`/appointments/${appt.id}/status`, { status: 'ACTIVE' });
       router.push(`/doctor/consultation/${appt.id}`);
-    } catch {
-      toast.error('No se pudo iniciar la consulta');
-    }
+    } catch { toast.error('No se pudo iniciar la consulta'); }
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 sm:p-6 max-w-2xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Agenda del Día</h1>
-          <p className="text-muted-foreground">Dr. {user?.doctor?.specialty}</p>
+          <h1 className="text-xl font-bold text-foreground">Agenda del Día</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{user?.doctor?.specialty}</p>
         </div>
-        <Input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="w-auto"
-        />
+        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)}
+          className="w-full sm:w-44 h-10 rounded-xl text-sm" />
       </div>
 
       {loading ? (
-        <p className="text-center text-muted-foreground py-12">Cargando agenda...</p>
+        <div className="space-y-3">
+          {[1,2,3].map(i => <div key={i} className="h-24 rounded-2xl bg-muted animate-pulse" />)}
+        </div>
       ) : appointments.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            No hay turnos para el {new Date(date + 'T00:00:00').toLocaleDateString('es-AR')}.
-          </CardContent>
-        </Card>
+        <div className="text-center py-16 text-muted-foreground">
+          <div className="text-4xl mb-3">📅</div>
+          <p className="font-medium">No hay turnos para esta fecha</p>
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {appointments.map((appt) => (
-            <Card key={appt.id}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">
+            <div key={appt.id} className="bg-card rounded-2xl border border-border/60 p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div>
+                  <p className="font-semibold text-foreground">
                     {appt.patient?.firstName} {appt.patient?.lastName}
-                    <span className="text-sm font-normal text-muted-foreground ml-2">
-                      — DNI {appt.patient?.dni}
-                    </span>
-                  </CardTitle>
-                  <Badge variant={STATUS_COLORS[appt.status]}>{STATUS_LABELS[appt.status]}</Badge>
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">DNI {appt.patient?.dni}</p>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  {new Date(appt.scheduledAt).toLocaleTimeString('es-AR', { timeStyle: 'short' })} hs
-                </p>
-                {(appt.status === 'WAITING' || appt.status === 'PENDING') && (
-                  <Button className="mt-3" size="sm" onClick={() => startConsultation(appt)}>
-                    Iniciar consulta
-                  </Button>
-                )}
-                {appt.status === 'ACTIVE' && (
-                  <Button className="mt-3" size="sm" onClick={() => router.push(`/doctor/consultation/${appt.id}`)}>
-                    Continuar consulta
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full border shrink-0 ${STATUS_COLORS[appt.status]}`}>
+                  {STATUS_LABELS[appt.status]}
+                </span>
+              </div>
+
+              <p className="text-sm text-muted-foreground flex items-center gap-1.5 mb-3">
+                <span>🕐</span>
+                {new Date(appt.scheduledAt).toLocaleTimeString('es-AR', { timeStyle: 'short' })} hs
+              </p>
+
+              {(appt.status === 'PENDING' || appt.status === 'WAITING') && (
+                <Button size="sm" onClick={() => start(appt)}
+                  className="w-full sm:w-auto rounded-xl bg-primary hover:bg-primary/90 text-xs h-9">
+                  Iniciar consulta
+                </Button>
+              )}
+              {appt.status === 'ACTIVE' && (
+                <Button size="sm" onClick={() => router.push(`/doctor/consultation/${appt.id}`)}
+                  className="w-full sm:w-auto rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs h-9">
+                  Continuar consulta
+                </Button>
+              )}
+            </div>
           ))}
         </div>
       )}
