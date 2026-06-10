@@ -55,18 +55,18 @@ describe('DoctorsService', () => {
       mockPrisma.doctorAvailability.findMany.mockResolvedValue([
         { id: 'rule-1', doctorId: 'doctor-1', dayOfWeek: 1, startTime: '09:00', endTime: '10:00', slotMinutes: 15 },
       ]);
-      // El primer slot (09:00) ya está ocupado
+      // El primer slot (09:00 ARG) ya está ocupado
       mockPrisma.appointment.findMany.mockResolvedValue([
-        { scheduledAt: new Date('2026-06-15T09:00:00') },
+        { scheduledAt: new Date('2026-06-15T09:00:00-03:00') },
       ]);
 
       const slots = await service.getAvailableSlots('doctor-1', '2026-06-15');
 
       // 09:00-10:00 cada 15min = 4 slots, menos el ocupado = 3
       expect(slots).toHaveLength(3);
-      expect(slots).not.toContain(new Date('2026-06-15T09:00:00').toISOString());
-      expect(slots).toContain(new Date('2026-06-15T09:15:00').toISOString());
-      expect(slots).toContain(new Date('2026-06-15T09:45:00').toISOString());
+      expect(slots).not.toContain(new Date('2026-06-15T09:00:00-03:00').toISOString());
+      expect(slots).toContain(new Date('2026-06-15T09:15:00-03:00').toISOString());
+      expect(slots).toContain(new Date('2026-06-15T09:45:00-03:00').toISOString());
     });
   });
 

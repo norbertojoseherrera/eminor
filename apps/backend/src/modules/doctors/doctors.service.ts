@@ -63,17 +63,17 @@ export class DoctorsService {
     const doctor = await this.prisma.doctor.findUnique({ where: { id: doctorId } });
     if (!doctor) throw new NotFoundException('Doctor not found');
 
-    // Append local time (no Z) so dayOfWeek and slot times match Argentina local time
-    const day = new Date(`${date}T00:00:00`);
-    const dayOfWeek = day.getDay();
+    // Argentina no usa horario de verano: offset fijo -03:00, independiente de la TZ del servidor
+    const ARG_TZ_OFFSET = '-03:00';
+
+    const dayStart = new Date(`${date}T00:00:00${ARG_TZ_OFFSET}`);
+    const dayEnd = new Date(`${date}T23:59:59.999${ARG_TZ_OFFSET}`);
+    const dayOfWeek = dayStart.getUTCDay();
 
     const rules = await this.prisma.doctorAvailability.findMany({
       where: { doctorId, dayOfWeek },
     });
     if (rules.length === 0) return [];
-
-    const dayStart = new Date(`${date}T00:00:00`);
-    const dayEnd = new Date(`${date}T23:59:59.999`);
 
     const existing = await this.prisma.appointment.findMany({
       where: {
@@ -89,13 +89,8 @@ export class DoctorsService {
     const slots: string[] = [];
 
     for (const rule of rules) {
-      const [startH, startM] = rule.startTime.split(':').map(Number);
-      const [endH, endM] = rule.endTime.split(':').map(Number);
-
-      let cursor = new Date(`${date}T00:00:00`);
-      cursor.setHours(startH, startM, 0, 0);
-      const end = new Date(`${date}T00:00:00`);
-      end.setHours(endH, endM, 0, 0);
+      let cursor = new Date(`${date}T${rule.startTime}:00${ARG_TZ_OFFSET}`);
+      const end = new Date(`${date}T${rule.endTime}:00${ARG_TZ_OFFSET}`);
 
       while (cursor < end) {
         if (cursor > now && !taken.has(cursor.getTime())) {
