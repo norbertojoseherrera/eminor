@@ -78,7 +78,7 @@ export default function DoctorConsultationPage({
             Finalizar
           </button>
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-h-0">
           <JitsiRoom
             roomName={videoData.roomName}
             token={videoData.token}

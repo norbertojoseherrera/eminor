@@ -52,7 +52,7 @@ export default function ConsultationPage({ params }: { params: Promise<{ roomId:
   if (!videoData) return null;
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col">
+    <div className="h-screen bg-slate-900 flex flex-col">
       <div className="flex items-center justify-between px-6 py-3 border-b border-slate-700">
         <span className="text-white font-semibold text-sm">EMINOR — Videoconsulta</span>
         <button
@@ -62,7 +62,7 @@ export default function ConsultationPage({ params }: { params: Promise<{ roomId:
           Finalizar consulta
         </button>
       </div>
-      <div className="flex-1">
+      <div className="flex-1 min-h-0">
         <JitsiRoom
           roomName={videoData.roomName}
           token={videoData.token}
