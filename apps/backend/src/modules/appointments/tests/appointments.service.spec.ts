@@ -9,8 +9,11 @@ const mockPrisma = {
   appointment: {
     findMany: jest.fn(),
     findUnique: jest.fn(),
+    findFirst: jest.fn(),
+    count: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
+    delete: jest.fn(),
   },
   patient: {
     findUnique: jest.fn(),
@@ -168,6 +171,91 @@ describe('AppointmentsService — máquina de estados', () => {
       await expect(service.getVideoToken('no-exist', doctorUser)).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('create — reserva de turno', () => {
+    const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    it('paciente reserva para sí mismo, ignorando patientId del body', async () => {
+      mockPrisma.patient.findUnique.mockResolvedValue({ id: 'patient-1' });
+      mockPrisma.appointment.findFirst.mockResolvedValue(null);
+      mockPrisma.appointment.create.mockResolvedValue(makeAppointment());
+
+      await service.create(
+        { patientId: 'someone-elses-id', doctorId: 'doctor-1', scheduledAt: futureDate },
+        patientUser,
+      );
+
+      expect(mockPrisma.appointment.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ patientId: 'patient-1' }) }),
+      );
+    });
+
+    it('admin debe enviar patientId', async () => {
+      await expect(
+        service.create({ doctorId: 'doctor-1', scheduledAt: futureDate }, adminUser),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('rechaza fecha en el pasado', async () => {
+      mockPrisma.patient.findUnique.mockResolvedValue({ id: 'patient-1' });
+
+      await expect(
+        service.create(
+          { patientId: 'patient-1', doctorId: 'doctor-1', scheduledAt: '2020-01-01T10:00:00Z' },
+          patientUser,
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('rechaza horario ya ocupado', async () => {
+      mockPrisma.patient.findUnique.mockResolvedValue({ id: 'patient-1' });
+      mockPrisma.appointment.findFirst.mockResolvedValue(makeAppointment());
+
+      await expect(
+        service.create(
+          { patientId: 'patient-1', doctorId: 'doctor-1', scheduledAt: futureDate },
+          patientUser,
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('admin CRUD', () => {
+    it('findAllAdmin pagina y filtra por status', async () => {
+      mockPrisma.appointment.findMany.mockResolvedValue([makeAppointment()]);
+      mockPrisma.appointment.count.mockResolvedValue(1);
+
+      const result = await service.findAllAdmin({ status: AppointmentStatus.PENDING, page: 2, limit: 5 });
+
+      expect(mockPrisma.appointment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { status: AppointmentStatus.PENDING }, skip: 5, take: 5 }),
+      );
+      expect(result.total).toBe(1);
+    });
+
+    it('update lanza NotFoundException si no existe', async () => {
+      mockPrisma.appointment.findUnique.mockResolvedValue(null);
+
+      await expect(service.update('no-exist', { notes: 'x' })).rejects.toThrow(NotFoundException);
+    });
+
+    it('update rechaza reprogramar a un horario ocupado', async () => {
+      mockPrisma.appointment.findUnique.mockResolvedValue(makeAppointment());
+      mockPrisma.appointment.findFirst.mockResolvedValue(makeAppointment({ id: 'other-appt' }));
+
+      await expect(
+        service.update('appt-1', { scheduledAt: new Date(Date.now() + 86_400_000).toISOString() }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('remove elimina el turno', async () => {
+      mockPrisma.appointment.findUnique.mockResolvedValue(makeAppointment());
+      mockPrisma.appointment.delete.mockResolvedValue(makeAppointment());
+
+      await expect(service.remove('appt-1')).resolves.toEqual({ id: 'appt-1' });
+      expect(mockPrisma.appointment.delete).toHaveBeenCalledWith({ where: { id: 'appt-1' } });
     });
   });
 

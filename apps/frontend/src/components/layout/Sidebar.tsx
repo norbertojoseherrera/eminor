@@ -15,14 +15,16 @@ const patientNav = [
 ];
 
 const doctorNav = [
-  { href: '/doctor/schedule',  label: 'Agenda del Día',  icon: '📅' },
-  { href: '/doctor/patients',  label: 'Mis Pacientes',   icon: '👥' },
+  { href: '/doctor/schedule',     label: 'Agenda del Día',   icon: '📅' },
+  { href: '/doctor/patients',     label: 'Mis Pacientes',    icon: '👥' },
+  { href: '/doctor/availability', label: 'Disponibilidad',   icon: '🕐' },
 ];
 
 const adminNav = [
-  { href: '/admin/users',      label: 'Usuarios',        icon: '👤' },
-  { href: '/admin/audit-logs', label: 'Audit Logs',      icon: '🔍' },
-  { href: '/admin/stats',      label: 'Estadísticas',    icon: '📊' },
+  { href: '/admin/users',       label: 'Usuarios',        icon: '👤' },
+  { href: '/admin/appointments', label: 'Turnos',         icon: '🗓️' },
+  { href: '/admin/audit-logs',  label: 'Audit Logs',      icon: '🔍' },
+  { href: '/admin/stats',       label: 'Estadísticas',    icon: '📊' },
 ];
 
 function RoleBadge({ role }: { role: string }) {

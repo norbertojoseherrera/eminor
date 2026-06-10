@@ -45,9 +45,15 @@ export default function PatientAppointmentsPage() {
 
   return (
     <div className="p-4 sm:p-6 max-w-2xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-foreground">Mis Turnos</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Gestión de tus consultas médicas</p>
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Mis Turnos</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Gestión de tus consultas médicas</p>
+        </div>
+        <Button size="sm" onClick={() => router.push('/patient/appointments/new')}
+          className="shrink-0 rounded-xl bg-primary hover:bg-primary/90 text-xs h-9">
+          + Agendar turno
+        </Button>
       </div>
 
       {loading ? (
@@ -58,7 +64,7 @@ export default function PatientAppointmentsPage() {
         <div className="text-center py-16 text-muted-foreground">
           <div className="text-4xl mb-3">🗓️</div>
           <p className="font-medium">No tenés turnos agendados</p>
-          <p className="text-sm mt-1">Contactá a tu médico para agendar una consulta</p>
+          <p className="text-sm mt-1">Tocá &quot;Agendar turno&quot; para reservar tu próxima consulta</p>
         </div>
       ) : (
         <div className="space-y-3">

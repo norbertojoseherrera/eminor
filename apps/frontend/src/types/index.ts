@@ -29,6 +29,14 @@ export interface Doctor {
   isVerified: boolean;
 }
 
+export interface DoctorAvailability {
+  id?: string;
+  dayOfWeek: number; // 0=Domingo .. 6=Sábado
+  startTime: string; // "HH:mm"
+  endTime: string; // "HH:mm"
+  slotMinutes: number;
+}
+
 export interface Appointment {
   id: string;
   patientId: string;
@@ -38,7 +46,7 @@ export interface Appointment {
   roomUuid: string;
   notes?: string;
   patient?: Pick<Patient, 'firstName' | 'lastName' | 'dni'>;
-  doctor?: Pick<Doctor, 'licenseNumber' | 'specialty'>;
+  doctor?: Pick<Doctor, 'licenseNumber' | 'specialty' | 'firstName' | 'lastName'>;
 }
 
 export interface SoapData {

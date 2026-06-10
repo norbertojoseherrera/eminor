@@ -10,6 +10,7 @@ import { EvolutionsModule } from './modules/evolutions/evolutions.module';
 import { StudiesModule } from './modules/studies/studies.module';
 import { PrescriptionsModule } from './modules/prescriptions/prescriptions.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { DoctorsModule } from './modules/doctors/doctors.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { AdminModule } from './modules/admin/admin.module';
     StudiesModule,
     PrescriptionsModule,
     AdminModule,
+    DoctorsModule,
   ],
   controllers: [HealthController],
 })

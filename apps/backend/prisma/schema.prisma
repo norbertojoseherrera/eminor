@@ -69,10 +69,26 @@ model Doctor {
   specialty     String
   isVerified    Boolean @default(false) @map("is_verified")
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   appointments Appointment[]
+  availability DoctorAvailability[]
 
   @@map("doctors")
+}
+
+// dayOfWeek: 0=Domingo .. 6=Sábado
+model DoctorAvailability {
+  id          String @id @default(uuid())
+  doctorId    String @map("doctor_id")
+  dayOfWeek   Int    @map("day_of_week")
+  startTime   String @map("start_time") // "HH:mm"
+  endTime     String @map("end_time") // "HH:mm"
+  slotMinutes Int    @default(15) @map("slot_minutes")
+
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId, dayOfWeek])
+  @@map("doctor_availability")
 }
 
 model Appointment {

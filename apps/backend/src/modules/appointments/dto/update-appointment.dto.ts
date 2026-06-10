@@ -1,16 +1,17 @@
 import { IsUUID, IsDateString, IsOptional, IsString, MaxLength } from 'class-validator';
 
-export class CreateAppointmentDto {
-  // Solo se usa cuando un ADMIN crea el turno; los pacientes reservan para sí mismos
+export class UpdateAppointmentDto {
   @IsOptional()
   @IsUUID()
   patientId?: string;
 
+  @IsOptional()
   @IsUUID()
-  doctorId: string;
+  doctorId?: string;
 
+  @IsOptional()
   @IsDateString()
-  scheduledAt: string;
+  scheduledAt?: string;
 
   @IsOptional()
   @IsString()

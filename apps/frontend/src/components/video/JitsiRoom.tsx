@@ -29,11 +29,11 @@ export function JitsiRoom({ roomName, token, displayName, domain = 'meet.jit.si'
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const script = document.createElement('script');
-    script.src = `https://${domain}/external_api.js`;
-    script.async = true;
+    let cancelled = false;
 
-    script.onload = () => {
+    const initJitsi = () => {
+      if (cancelled || !containerRef.current) return;
+
       apiRef.current = new window.JitsiMeetExternalAPI(domain, {
         roomName,
         jwt: token || undefined,
@@ -55,11 +55,22 @@ export function JitsiRoom({ roomName, token, displayName, domain = 'meet.jit.si'
       });
     };
 
-    document.head.appendChild(script);
+    let script: HTMLScriptElement | null = null;
+    if (window.JitsiMeetExternalAPI) {
+      initJitsi();
+    } else {
+      script = document.createElement('script');
+      script.src = `https://${domain}/external_api.js`;
+      script.async = true;
+      script.onload = initJitsi;
+      document.head.appendChild(script);
+    }
 
     return () => {
+      cancelled = true;
       apiRef.current?.dispose();
-      document.head.removeChild(script);
+      apiRef.current = null;
+      if (script) document.head.removeChild(script);
     };
   }, [roomName, token, domain, displayName, onReadyToClose]);
 

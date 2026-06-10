@@ -3,17 +3,21 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
   UseGuards,
   UseInterceptors,
   ParseUUIDPipe,
+  ParseIntPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { AppointmentStatus, Role } from '@prisma/client';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
+import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -41,6 +45,18 @@ export class AppointmentsController {
     return this.appointmentsService.findForPatient(user.id);
   }
 
+  @Get('admin/all')
+  @Roles(Role.ADMIN)
+  findAllAdmin(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('status') status?: AppointmentStatus,
+    @Query('doctorId') doctorId?: string,
+    @Query('patientId') patientId?: string,
+  ) {
+    return this.appointmentsService.findAllAdmin({ page, limit, status, doctorId, patientId });
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.appointmentsService.findById(id);
@@ -49,8 +65,8 @@ export class AppointmentsController {
   @Post()
   @Roles(Role.ADMIN, Role.PATIENT)
   @UseInterceptors(AuditLogInterceptor)
-  create(@Body() dto: CreateAppointmentDto) {
-    return this.appointmentsService.create(dto);
+  create(@Body() dto: CreateAppointmentDto, @CurrentUser() user: JwtUser) {
+    return this.appointmentsService.create(dto, user);
   }
 
   @Patch(':id/status')
@@ -70,5 +86,19 @@ export class AppointmentsController {
     @CurrentUser() user: JwtUser,
   ) {
     return this.appointmentsService.getVideoToken(id, user);
+  }
+
+  @Patch(':id')
+  @Roles(Role.ADMIN)
+  @UseInterceptors(AuditLogInterceptor)
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateAppointmentDto) {
+    return this.appointmentsService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @Roles(Role.ADMIN)
+  @UseInterceptors(AuditLogInterceptor)
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.appointmentsService.remove(id);
   }
 }

@@ -8,6 +8,7 @@ import { AppointmentStatus, Role } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { VideoTokenService } from './video-token.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { JwtUser } from '../../common/decorators/current-user.decorator';
 
 const VALID_TRANSITIONS: Record<AppointmentStatus, AppointmentStatus[]> = {
@@ -52,12 +53,40 @@ export class AppointmentsService {
     });
   }
 
-  async create(dto: CreateAppointmentDto) {
+  async create(dto: CreateAppointmentDto, user: JwtUser) {
+    let patientId = dto.patientId;
+
+    if (user.role === Role.PATIENT) {
+      const patient = await this.prisma.patient.findUnique({ where: { userId: user.id } });
+      if (!patient) throw new NotFoundException('Patient profile not found');
+      patientId = patient.id;
+    }
+
+    if (!patientId) {
+      throw new BadRequestException('patientId is required');
+    }
+
+    const scheduledAt = new Date(dto.scheduledAt);
+    if (scheduledAt <= new Date()) {
+      throw new BadRequestException('La fecha del turno debe ser futura');
+    }
+
+    const conflict = await this.prisma.appointment.findFirst({
+      where: {
+        doctorId: dto.doctorId,
+        scheduledAt,
+        status: { not: AppointmentStatus.CANCELLED },
+      },
+    });
+    if (conflict) {
+      throw new BadRequestException('El horario seleccionado ya no está disponible');
+    }
+
     return this.prisma.appointment.create({
       data: {
-        patientId: dto.patientId,
+        patientId,
         doctorId: dto.doctorId,
-        scheduledAt: new Date(dto.scheduledAt),
+        scheduledAt,
         notes: dto.notes,
       },
       include: {
@@ -125,6 +154,80 @@ export class AppointmentsService {
 
     const token = this.videoTokenService.generateToken(appt.roomUuid, user);
     return { token, roomName: appt.roomUuid, domain: 'meet.jit.si' };
+  }
+
+  async findAllAdmin(filters: {
+    page?: number;
+    limit?: number;
+    status?: AppointmentStatus;
+    doctorId?: string;
+    patientId?: string;
+  }) {
+    const page = filters.page ?? 1;
+    const limit = filters.limit ?? 20;
+    const where = {
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.doctorId ? { doctorId: filters.doctorId } : {}),
+      ...(filters.patientId ? { patientId: filters.patientId } : {}),
+    };
+
+    const [appointments, total] = await Promise.all([
+      this.prisma.appointment.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { scheduledAt: 'desc' },
+        include: {
+          patient: { select: { firstName: true, lastName: true, dni: true } },
+          doctor: { select: { firstName: true, lastName: true, licenseNumber: true, specialty: true } },
+        },
+      }),
+      this.prisma.appointment.count({ where }),
+    ]);
+
+    return { appointments, total, page, limit };
+  }
+
+  async update(id: string, dto: UpdateAppointmentDto) {
+    const appt = await this.prisma.appointment.findUnique({ where: { id } });
+    if (!appt) throw new NotFoundException('Appointment not found');
+
+    if (dto.scheduledAt) {
+      const scheduledAt = new Date(dto.scheduledAt);
+      const conflict = await this.prisma.appointment.findFirst({
+        where: {
+          id: { not: id },
+          doctorId: dto.doctorId ?? appt.doctorId,
+          scheduledAt,
+          status: { not: AppointmentStatus.CANCELLED },
+        },
+      });
+      if (conflict) {
+        throw new BadRequestException('El horario seleccionado ya no está disponible');
+      }
+    }
+
+    return this.prisma.appointment.update({
+      where: { id },
+      data: {
+        ...(dto.patientId ? { patientId: dto.patientId } : {}),
+        ...(dto.doctorId ? { doctorId: dto.doctorId } : {}),
+        ...(dto.scheduledAt ? { scheduledAt: new Date(dto.scheduledAt) } : {}),
+        ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
+      },
+      include: {
+        patient: { select: { firstName: true, lastName: true, dni: true } },
+        doctor: { select: { firstName: true, lastName: true, licenseNumber: true, specialty: true } },
+      },
+    });
+  }
+
+  async remove(id: string) {
+    const appt = await this.prisma.appointment.findUnique({ where: { id } });
+    if (!appt) throw new NotFoundException('Appointment not found');
+
+    await this.prisma.appointment.delete({ where: { id } });
+    return { id };
   }
 
   private assertCanModify(
