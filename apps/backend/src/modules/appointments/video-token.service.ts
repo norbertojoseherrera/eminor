@@ -26,8 +26,11 @@ export class VideoTokenService {
       },
     };
 
+    // meet.jit.si público no valida JWT con un emisor/secreto propio: enviar un
+    // token firmado con un secreto de desarrollo provoca "Authentication failed".
+    // Solo se genera el JWT si hay un proveedor de auth (JaaS / Jitsi propio) configurado.
     if (!appSecret) {
-      return jwt.sign(payload, 'dev-secret-not-for-prod');
+      return '';
     }
 
     return jwt.sign(payload, appSecret);
