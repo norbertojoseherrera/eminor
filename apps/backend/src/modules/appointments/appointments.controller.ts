@@ -45,6 +45,12 @@ export class AppointmentsController {
     return this.appointmentsService.findForPatient(user.id);
   }
 
+  @Get('doctor/patients')
+  @Roles(Role.DOCTOR)
+  findPatientsForDoctor(@CurrentUser() user: JwtUser) {
+    return this.appointmentsService.findPatientsForDoctor(user.id);
+  }
+
   @Get('admin/all')
   @Roles(Role.ADMIN)
   findAllAdmin(

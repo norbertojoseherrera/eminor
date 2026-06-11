@@ -53,6 +53,35 @@ export class AppointmentsService {
     });
   }
 
+  async findPatientsForDoctor(userId: string) {
+    const doctor = await this.prisma.doctor.findUnique({ where: { userId } });
+    if (!doctor) return [];
+
+    const appointments = await this.prisma.appointment.findMany({
+      where: { doctorId: doctor.id },
+      include: {
+        patient: { select: { id: true, firstName: true, lastName: true, dni: true, medicalInsurance: true } },
+      },
+      orderBy: { scheduledAt: 'desc' },
+    });
+
+    const patients = new Map<string, { id: string; firstName: string; lastName: string; dni: string; medicalInsurance: string | null; lastAppointment: Date; appointmentsCount: number }>();
+    for (const appt of appointments) {
+      const existing = patients.get(appt.patient.id);
+      if (existing) {
+        existing.appointmentsCount += 1;
+      } else {
+        patients.set(appt.patient.id, {
+          ...appt.patient,
+          lastAppointment: appt.scheduledAt,
+          appointmentsCount: 1,
+        });
+      }
+    }
+
+    return [...patients.values()].sort((a, b) => a.lastName.localeCompare(b.lastName, 'es'));
+  }
+
   async create(dto: CreateAppointmentDto, user: JwtUser) {
     let patientId = dto.patientId;
 
