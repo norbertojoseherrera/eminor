@@ -5,6 +5,18 @@ import * as bcrypt from 'bcrypt';
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter } as ConstructorParameters<typeof PrismaClient>[0]);
 
+// Próxima fecha (a partir de mañana) que cae en dayOfWeek (0=Domingo..6=Sábado), a la hora indicada (HH:mm, AR UTC-3)
+function nextDateForDayAndTime(dayOfWeek: number, time: string): Date {
+  const [hours, minutes] = time.split(':').map(Number);
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + 1);
+  while (date.getUTCDay() !== dayOfWeek) {
+    date.setUTCDate(date.getUTCDate() + 1);
+  }
+  date.setUTCHours(hours + 3, minutes, 0, 0); // AR es UTC-3
+  return date;
+}
+
 async function main() {
   console.log('Seeding database...');
 
@@ -150,6 +162,37 @@ async function main() {
     },
   });
   console.log('Patient created:', patient.email);
+
+  // Asignar al menos un turno (con la paciente de prueba) a cada médico
+  const anaPatient = await prisma.patient.findUnique({ where: { dni: '12345678' } });
+  const allDoctors = await prisma.doctor.findMany({
+    where: {
+      licenseNumber: { in: ['MN-12345', ...extraDoctors.map((d) => d.licenseNumber)] },
+    },
+    include: { availability: true },
+  });
+
+  if (anaPatient) {
+    for (const doc of allDoctors) {
+      const existing = await prisma.appointment.findFirst({ where: { doctorId: doc.id } });
+      if (existing) continue;
+
+      const slot = doc.availability[0];
+      const scheduledAt = slot
+        ? nextDateForDayAndTime(slot.dayOfWeek, slot.startTime)
+        : nextDateForDayAndTime(1, '10:00');
+
+      await prisma.appointment.create({
+        data: {
+          patientId: anaPatient.id,
+          doctorId: doc.id,
+          scheduledAt,
+          status: 'PENDING',
+        },
+      });
+      console.log(`Appointment created: ${doc.firstName} ${doc.lastName} (${doc.specialty}) <-> ${anaPatient.firstName} ${anaPatient.lastName} @ ${scheduledAt.toISOString()}`);
+    }
+  }
 
   console.log('Seed complete!');
   console.log('─────────────────────────────────────');
