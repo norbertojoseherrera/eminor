@@ -77,7 +77,7 @@ export function JitsiRoom({ roomName, token, displayName, domain = 'meet.jit.si'
   return (
     <div
       ref={containerRef}
-      className="w-full h-full min-h-[400px] rounded-lg overflow-hidden bg-slate-900"
+      className="w-full h-full rounded-lg overflow-hidden bg-slate-900"
     />
   );
 }

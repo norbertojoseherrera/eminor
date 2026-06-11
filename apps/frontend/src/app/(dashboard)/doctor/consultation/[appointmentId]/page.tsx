@@ -60,21 +60,38 @@ export default function DoctorConsultationPage({
 
   if (!videoData || !medicalRecord) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Cargando sala de consulta...</p>
+      <div className="flex flex-col lg:flex-row h-[calc(100dvh-9rem)] lg:h-screen overflow-hidden animate-pulse">
+        {/* Skeleton — panel de video */}
+        <div className="h-[38dvh] lg:h-auto lg:w-1/2 bg-slate-800 flex flex-col shrink-0">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700">
+            <div className="h-4 w-40 bg-slate-700 rounded" />
+            <div className="h-6 w-16 bg-slate-700 rounded" />
+          </div>
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-slate-400 text-sm">Cargando sala de consulta...</p>
+          </div>
+        </div>
+
+        {/* Skeleton — panel de HCE */}
+        <div className="flex-1 lg:w-1/2 bg-white p-4 space-y-3 min-h-0">
+          <div className="h-9 w-full bg-slate-200 rounded" />
+          <div className="h-24 w-full bg-slate-100 rounded" />
+          <div className="h-24 w-full bg-slate-100 rounded" />
+          <div className="h-24 w-full bg-slate-100 rounded" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Left panel — Video */}
-      <div className="w-1/2 bg-slate-900 flex flex-col">
+    <div className="flex flex-col lg:flex-row h-[calc(100dvh-9rem)] lg:h-screen overflow-hidden">
+      {/* Panel de video */}
+      <div className="h-[38dvh] lg:h-auto lg:w-1/2 bg-slate-900 flex flex-col shrink-0">
         <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700">
-          <span className="text-white text-sm font-medium">
+          <span className="text-white text-sm font-medium truncate">
             Paciente: {medicalRecord.firstName} {medicalRecord.lastName}
           </span>
-          <button onClick={handleEnd} className="text-xs text-slate-400 hover:text-white px-3 py-1 rounded bg-slate-700">
+          <button onClick={handleEnd} className="text-xs text-slate-400 hover:text-white px-3 py-1 rounded bg-slate-700 shrink-0 ml-2">
             Finalizar
           </button>
         </div>
@@ -89,8 +106,8 @@ export default function DoctorConsultationPage({
         </div>
       </div>
 
-      {/* Right panel — HCE + SOAP */}
-      <div className="w-1/2 overflow-y-auto bg-white">
+      {/* Panel de HCE + SOAP */}
+      <div className="flex-1 lg:w-1/2 overflow-y-auto bg-white min-h-0">
         <Tabs defaultValue="soap" className="h-full">
           <TabsList className="w-full rounded-none border-b">
             <TabsTrigger value="soap" className="flex-1">Nueva Evolución SOAP</TabsTrigger>
