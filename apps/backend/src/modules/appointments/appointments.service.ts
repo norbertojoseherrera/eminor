@@ -60,12 +60,12 @@ export class AppointmentsService {
     const appointments = await this.prisma.appointment.findMany({
       where: { doctorId: doctor.id },
       include: {
-        patient: { select: { id: true, firstName: true, lastName: true, dni: true, medicalInsurance: true } },
+        patient: { select: { id: true, firstName: true, lastName: true, dni: true, phone: true, medicalInsurance: true } },
       },
       orderBy: { scheduledAt: 'desc' },
     });
 
-    const patients = new Map<string, { id: string; firstName: string; lastName: string; dni: string; medicalInsurance: string | null; lastAppointment: Date; appointmentsCount: number }>();
+    const patients = new Map<string, { id: string; firstName: string; lastName: string; dni: string; phone: string; medicalInsurance: string | null; lastAppointment: Date; appointmentsCount: number }>();
     for (const appt of appointments) {
       const existing = patients.get(appt.patient.id);
       if (existing) {

@@ -16,7 +16,9 @@ const schema = z.object({
   password: z.string().min(8).regex(/^(?=.*[A-Z])(?=.*\d)/, 'Debe incluir mayúscula y número'),
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
-  dni: z.string().regex(/^\d{7,8}$/, 'DNI: 7 u 8 dígitos'),
+  documentType: z.enum(['DNI', 'PASAPORTE']),
+  dni: z.string().regex(/^[A-Za-z0-9]{6,20}$/, 'Documento inválido'),
+  phone: z.string().regex(/^\+?[\d\s-]{8,20}$/, 'Teléfono inválido'),
   birthDate: z.string().min(1, 'Requerido'),
   medicalInsurance: z.string().optional(),
 });
@@ -84,11 +86,26 @@ export default function RegisterPage() {
               {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-foreground/70">DNI</Label>
+                <Label className="text-xs font-medium text-foreground/70">Tipo doc.</Label>
+                <select {...register('documentType')} defaultValue="DNI" className="h-10 w-full rounded-xl border border-input bg-background px-2 text-sm">
+                  <option value="DNI">DNI</option>
+                  <option value="PASAPORTE">Pasaporte</option>
+                </select>
+              </div>
+              <div className="col-span-2 space-y-1.5">
+                <Label className="text-xs font-medium text-foreground/70">Número de documento</Label>
                 <Input {...register('dni')} placeholder="12345678" className="h-10 rounded-xl text-sm" />
                 {errors.dni && <p className="text-xs text-destructive">{errors.dni.message}</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-foreground/70">Teléfono</Label>
+                <Input {...register('phone')} placeholder="11 1234-5678" className="h-10 rounded-xl text-sm" />
+                {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-foreground/70">Nacimiento</Label>

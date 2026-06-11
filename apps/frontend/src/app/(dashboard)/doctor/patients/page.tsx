@@ -10,6 +10,7 @@ interface DoctorPatient {
   firstName: string;
   lastName: string;
   dni: string;
+  phone: string;
   medicalInsurance: string | null;
   lastAppointment: string;
   appointmentsCount: number;
@@ -78,6 +79,9 @@ export default function DoctorPatientsPage() {
                     {p.firstName} {p.lastName}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">DNI {p.dni}</p>
+                  {p.phone && (
+                    <p className="text-xs text-muted-foreground">📞 {p.phone}</p>
+                  )}
                   {p.medicalInsurance && (
                     <p className="text-xs text-muted-foreground">{p.medicalInsurance}</p>
                   )}

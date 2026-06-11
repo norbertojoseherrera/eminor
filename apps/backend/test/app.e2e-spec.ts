@@ -50,7 +50,9 @@ describe('EMINOR API — E2E', () => {
           password: 'Password1!',
           firstName: 'Ana',
           lastName: 'López',
+          documentType: 'DNI',
           dni: '12345678',
+          phone: '+54 9 11 5555-1234',
           birthDate: '1990-01-15',
           medicalInsurance: 'OSDE',
         });
@@ -69,7 +71,9 @@ describe('EMINOR API — E2E', () => {
           password: 'Password1!',
           firstName: 'Otro',
           lastName: 'Paciente',
+          documentType: 'DNI',
           dni: '87654321',
+          phone: '+54 9 11 5555-1234',
           birthDate: '1985-03-20',
         });
 
@@ -79,14 +83,21 @@ describe('EMINOR API — E2E', () => {
     it('contraseña débil → 400', async () => {
       const res = await request(app.getHttpServer())
         .post('/api/auth/register')
-        .send({ email: 'nuevo@test.com', password: 'short', firstName: 'X', lastName: 'Y', dni: '11111111', birthDate: '2000-01-01' });
+        .send({ email: 'nuevo@test.com', password: 'short', firstName: 'X', lastName: 'Y', documentType: 'DNI', dni: '11111111', phone: '+54 9 11 5555-1234', birthDate: '2000-01-01' });
       expect(res.status).toBe(400);
     });
 
-    it('DNI con letras → 400', async () => {
+    it('pasaporte alfanumérico → 201', async () => {
       const res = await request(app.getHttpServer())
         .post('/api/auth/register')
-        .send({ email: 'otro@test.com', password: 'Password1!', firstName: 'X', lastName: 'Y', dni: 'ABC12345', birthDate: '2000-01-01' });
+        .send({ email: 'pasaporte@test.com', password: 'Password1!', firstName: 'X', lastName: 'Y', documentType: 'PASAPORTE', dni: 'AB123456', phone: '+54 9 11 5555-1234', birthDate: '2000-01-01' });
+      expect(res.status).toBe(201);
+    });
+
+    it('teléfono inválido → 400', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/auth/register')
+        .send({ email: 'otro@test.com', password: 'Password1!', firstName: 'X', lastName: 'Y', documentType: 'DNI', dni: '11122233', phone: 'abc', birthDate: '2000-01-01' });
       expect(res.status).toBe(400);
     });
   });

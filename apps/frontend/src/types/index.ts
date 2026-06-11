@@ -1,6 +1,7 @@
 export type Role = 'ADMIN' | 'DOCTOR' | 'PATIENT';
 export type AppointmentStatus = 'PENDING' | 'WAITING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
 export type FileType = 'PDF' | 'JPG' | 'PNG';
+export type DocumentType = 'DNI' | 'PASAPORTE';
 
 export interface User {
   id: string;
@@ -15,7 +16,9 @@ export interface Patient {
   id: string;
   firstName: string;
   lastName: string;
+  documentType: DocumentType;
   dni: string;
+  phone: string;
   birthDate: string;
   medicalInsurance?: string;
 }

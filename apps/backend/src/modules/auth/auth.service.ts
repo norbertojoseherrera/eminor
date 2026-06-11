@@ -37,9 +37,11 @@ export class AuthService {
         role: Role.PATIENT,
         patient: {
           create: {
+            documentType: dto.documentType,
             dni: dto.dni,
             firstName: dto.firstName,
             lastName: dto.lastName,
+            phone: dto.phone,
             birthDate: new Date(dto.birthDate),
             medicalInsurance: dto.medicalInsurance,
           },
@@ -104,7 +106,7 @@ export class AuthService {
         role: true,
         isActive: true,
         createdAt: true,
-        patient: { select: { id: true, firstName: true, lastName: true, dni: true, birthDate: true, medicalInsurance: true } },
+        patient: { select: { id: true, firstName: true, lastName: true, documentType: true, dni: true, phone: true, birthDate: true, medicalInsurance: true } },
         doctor: { select: { id: true, firstName: true, lastName: true, licenseNumber: true, specialty: true, isVerified: true } },
       },
     });

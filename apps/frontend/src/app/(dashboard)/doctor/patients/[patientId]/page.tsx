@@ -12,7 +12,9 @@ import { Evolution, Study } from '@/types';
 interface MedicalRecord {
   firstName: string;
   lastName: string;
+  documentType: 'DNI' | 'PASAPORTE';
   dni: string;
+  phone: string;
   evolutions: Evolution[];
   studies: Study[];
 }
@@ -53,7 +55,10 @@ export default function DoctorPatientDetailPage({
           <h1 className="text-xl font-bold text-foreground">
             {record.firstName} {record.lastName}
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">DNI {record.dni}</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{record.documentType} {record.dni}</p>
+          {record.phone && (
+            <p className="text-sm text-muted-foreground mt-0.5">📞 {record.phone}</p>
+          )}
         </div>
         <Button variant="outline" size="sm" className="rounded-xl text-xs h-9" onClick={() => router.push('/doctor/patients')}>
           Volver

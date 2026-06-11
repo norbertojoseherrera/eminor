@@ -59,7 +59,9 @@ describe('AuthService', () => {
           password: 'Password1!',
           firstName: 'Ana',
           lastName: 'López',
+          documentType: 'DNI',
           dni: '12345678',
+          phone: '+54 9 11 5555-1234',
           birthDate: '1990-01-01',
         }),
       ).rejects.toThrow(ConflictException);
@@ -80,7 +82,9 @@ describe('AuthService', () => {
         password: 'Password1!',
         firstName: 'Ana',
         lastName: 'López',
+        documentType: 'DNI',
         dni: '12345678',
+        phone: '+54 9 11 5555-1234',
         birthDate: '1990-01-01',
       });
 
@@ -105,7 +109,9 @@ describe('AuthService', () => {
         password: 'Password1!',
         firstName: 'Ana',
         lastName: 'López',
+        documentType: 'DNI',
         dni: '12345678',
+        phone: '+54 9 11 5555-1234',
         birthDate: '1990-01-01',
       });
 

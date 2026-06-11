@@ -18,7 +18,9 @@ interface RegisterData {
   password: string;
   firstName: string;
   lastName: string;
+  documentType: 'DNI' | 'PASAPORTE';
   dni: string;
+  phone: string;
   birthDate: string;
   medicalInsurance?: string;
 }

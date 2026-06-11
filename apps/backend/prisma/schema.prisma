@@ -26,6 +26,11 @@ enum FileType {
   PNG
 }
 
+enum DocumentType {
+  DNI
+  PASAPORTE
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -44,13 +49,15 @@ model User {
 }
 
 model Patient {
-  id               String   @id @default(uuid())
-  userId           String   @unique @map("user_id")
-  dni              String   @unique
-  firstName        String   @map("first_name")
-  lastName         String   @map("last_name")
-  birthDate        DateTime @map("birth_date")
-  medicalInsurance String?  @map("medical_insurance")
+  id               String       @id @default(uuid())
+  userId           String       @unique @map("user_id")
+  documentType     DocumentType @default(DNI) @map("document_type")
+  dni              String       @unique
+  firstName        String       @map("first_name")
+  lastName         String       @map("last_name")
+  phone            String       @default("") @map("phone")
+  birthDate        DateTime     @map("birth_date")
+  medicalInsurance String?      @map("medical_insurance")
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   appointments Appointment[]

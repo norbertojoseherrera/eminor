@@ -152,9 +152,11 @@ async function main() {
       role: Role.PATIENT,
       patient: {
         create: {
+          documentType: 'DNI',
           dni: '12345678',
           firstName: 'Ana',
           lastName: 'López',
+          phone: '+54 9 11 5555-1234',
           birthDate: new Date('1990-05-15'),
           medicalInsurance: 'OSDE',
         },
@@ -162,6 +164,12 @@ async function main() {
     },
   });
   console.log('Patient created:', patient.email);
+
+  // Completar documentType/phone en pacientes existentes que no los tengan (creados antes de este campo)
+  await prisma.patient.update({
+    where: { dni: '12345678' },
+    data: { documentType: 'DNI', phone: '+54 9 11 5555-1234' },
+  });
 
   // Asignar al menos un turno (con la paciente de prueba) a cada médico
   const anaPatient = await prisma.patient.findUnique({ where: { dni: '12345678' } });
