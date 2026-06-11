@@ -93,3 +93,19 @@ export interface Prescription {
   digitalSignatureHash: string;
   issuedAt: string;
 }
+
+export type CertificateType = 'ATTENDANCE' | 'REST' | 'FITNESS' | 'OTHER';
+
+export interface Certificate {
+  id: string;
+  appointmentId: string;
+  patientId: string;
+  type: CertificateType;
+  content: string;
+  restDays?: number | null;
+  digitalSignatureHash: string;
+  issuedAt: string;
+  appointment?: {
+    doctor?: { licenseNumber: string; specialty: string };
+  };
+}

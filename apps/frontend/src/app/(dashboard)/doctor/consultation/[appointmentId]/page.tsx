@@ -8,6 +8,7 @@ import api from '@/lib/api';
 import { JitsiRoom } from '@/components/video/JitsiRoom';
 import { DeviceCheckLobby } from '@/components/video/DeviceCheckLobby';
 import { SoapForm } from '@/components/evolution/SoapForm';
+import { CertificateForm } from '@/components/certificate/CertificateForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Evolution, Study } from '@/types';
@@ -33,6 +34,7 @@ export default function DoctorConsultationPage({
   const [medicalRecord, setMedicalRecord] = useState<MedicalRecord | null>(null);
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [completed, setCompleted] = useState(false);
 
   useEffect(() => {
     api.get<{ patientId: string; patient: { id: string } }>(`/appointments/${appointmentId}`)
@@ -49,10 +51,17 @@ export default function DoctorConsultationPage({
 
   const handleEnd = async () => {
     try {
-      await api.patch(`/appointments/${appointmentId}/status`, { status: 'COMPLETED' });
+      if (!completed) {
+        await api.patch(`/appointments/${appointmentId}/status`, { status: 'COMPLETED' });
+      }
     } finally {
       router.push('/doctor/schedule');
     }
+  };
+
+  const handleComplete = async () => {
+    await api.patch(`/appointments/${appointmentId}/status`, { status: 'COMPLETED' });
+    setCompleted(true);
   };
 
   const handleJoin = async (opts: { audioMuted: boolean; videoMuted: boolean }) => {
@@ -138,12 +147,17 @@ export default function DoctorConsultationPage({
         <Tabs defaultValue="soap" className="h-full">
           <TabsList className="w-full rounded-none border-b">
             <TabsTrigger value="soap" className="flex-1">Nueva Evolución SOAP</TabsTrigger>
+            <TabsTrigger value="certificate" className="flex-1">Certificado</TabsTrigger>
             <TabsTrigger value="history" className="flex-1">Historial HCE</TabsTrigger>
             <TabsTrigger value="studies" className="flex-1">Estudios</TabsTrigger>
           </TabsList>
 
           <TabsContent value="soap" className="p-4">
             <SoapForm appointmentId={appointmentId} onSaved={() => {}} />
+          </TabsContent>
+
+          <TabsContent value="certificate" className="p-4">
+            <CertificateForm appointmentId={appointmentId} completed={completed} onComplete={handleComplete} />
           </TabsContent>
 
           <TabsContent value="history" className="p-4 space-y-3">

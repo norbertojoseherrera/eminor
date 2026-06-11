@@ -31,6 +31,13 @@ enum DocumentType {
   PASAPORTE
 }
 
+enum CertificateType {
+  ATTENDANCE
+  REST
+  FITNESS
+  OTHER
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -63,6 +70,7 @@ model Patient {
   appointments Appointment[]
   evolutions   Evolution[]
   studies      Study[]
+  certificates Certificate[]
 
   @@map("patients")
 }
@@ -113,6 +121,7 @@ model Appointment {
   doctor       Doctor        @relation(fields: [doctorId], references: [id])
   evolution    Evolution?
   prescription Prescription?
+  certificate  Certificate?
 
   @@index([doctorId, scheduledAt])
   @@index([patientId])
@@ -161,6 +170,22 @@ model Prescription {
   appointment Appointment @relation(fields: [appointmentId], references: [id])
 
   @@map("prescriptions")
+}
+
+model Certificate {
+  id                   String          @id @default(uuid())
+  appointmentId        String          @unique @map("appointment_id")
+  patientId            String          @map("patient_id")
+  type                 CertificateType
+  content              String
+  restDays             Int?            @map("rest_days")
+  digitalSignatureHash String          @map("digital_signature_hash")
+  issuedAt             DateTime        @default(now()) @map("issued_at")
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  patient     Patient     @relation(fields: [patientId], references: [id])
+
+  @@map("certificates")
 }
 
 model AuditLog {

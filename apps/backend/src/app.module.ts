@@ -9,6 +9,7 @@ import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { EvolutionsModule } from './modules/evolutions/evolutions.module';
 import { StudiesModule } from './modules/studies/studies.module';
 import { PrescriptionsModule } from './modules/prescriptions/prescriptions.module';
+import { CertificatesModule } from './modules/certificates/certificates.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { DoctorsModule } from './modules/doctors/doctors.module';
 
@@ -29,6 +30,7 @@ import { DoctorsModule } from './modules/doctors/doctors.module';
     EvolutionsModule,
     StudiesModule,
     PrescriptionsModule,
+    CertificatesModule,
     AdminModule,
     DoctorsModule,
   ],

@@ -12,6 +12,7 @@ const patientNav = [
   { href: '/patient/medical-record', label: 'Historia Clínica', icon: '📋' },
   { href: '/patient/studies',      label: 'Mis Estudios',       icon: '📎' },
   { href: '/patient/prescriptions', label: 'Mis Recetas',       icon: '💊' },
+  { href: '/patient/certificates', label: 'Mis Certificados',  icon: '📜' },
 ];
 
 const doctorNav = [
