@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
 import api from '@/lib/api';
 import { JitsiRoom } from '@/components/video/JitsiRoom';
+import { DeviceCheckLobby } from '@/components/video/DeviceCheckLobby';
 
 interface VideoToken {
   token: string;
@@ -18,17 +18,9 @@ export default function ConsultationPage({ params }: { params: Promise<{ roomId:
   const router = useRouter();
   const { user } = useAuth();
   const [videoData, setVideoData] = useState<VideoToken | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    api.get<VideoToken>(`/appointments/${roomId}/video-token`)
-      .then((r) => setVideoData(r.data))
-      .catch(() => {
-        toast.error('No se pudo obtener el token de video');
-        router.back();
-      })
-      .finally(() => setLoading(false));
-  }, [roomId, router]);
+  const [muteOpts, setMuteOpts] = useState<{ audioMuted: boolean; videoMuted: boolean } | null>(null);
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   const handleClose = async () => {
     if (user?.role === 'DOCTOR') {
@@ -41,15 +33,33 @@ export default function ConsultationPage({ params }: { params: Promise<{ roomId:
     router.push(user?.role === 'DOCTOR' ? '/doctor/schedule' : '/patient/appointments');
   };
 
-  if (loading) {
+  const handleJoin = async (opts: { audioMuted: boolean; videoMuted: boolean }) => {
+    setJoining(true);
+    setJoinError(null);
+    try {
+      const { data } = await api.get<VideoToken>(`/appointments/${roomId}/video-token`);
+      setVideoData(data);
+      setMuteOpts(opts);
+    } catch (err) {
+      const raw = (err as { response?: { data?: { message?: string | { message?: string } } } })?.response?.data?.message;
+      const message = typeof raw === 'string' ? raw : raw?.message;
+      setJoinError(message ?? 'No se pudo ingresar a la sala de videoconsulta. Intentá nuevamente.');
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  if (!videoData || !muteOpts) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
-        <p>Conectando a la sala...</p>
-      </div>
+      <DeviceCheckLobby
+        title="Sala de espera virtual"
+        subtitle="Verificá tu cámara y micrófono antes de ingresar a la consulta"
+        onJoin={handleJoin}
+        joining={joining}
+        joinError={joinError}
+      />
     );
   }
-
-  if (!videoData) return null;
 
   return (
     <div className="h-screen bg-slate-900 flex flex-col">
@@ -69,6 +79,8 @@ export default function ConsultationPage({ params }: { params: Promise<{ roomId:
           displayName={user?.email ?? 'Usuario'}
           domain={videoData.domain}
           onReadyToClose={handleClose}
+          startWithAudioMuted={muteOpts.audioMuted}
+          startWithVideoMuted={muteOpts.videoMuted}
         />
       </div>
     </div>

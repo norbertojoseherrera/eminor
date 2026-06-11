@@ -20,6 +20,8 @@ interface Props {
   displayName: string;
   domain?: string;
   onReadyToClose?: () => void;
+  startWithAudioMuted?: boolean;
+  startWithVideoMuted?: boolean;
 }
 
 // meet.jit.si corta automaticamente las llamadas embebidas via iframe a los 5 minutos
@@ -27,11 +29,19 @@ interface Props {
 // mas largas, recreamos la sala antes de ese corte (reconexion silenciosa).
 const RECONNECT_INTERVAL_MS = 4 * 60 * 1000 + 30 * 1000; // 4:30
 
-export function JitsiRoom({ roomName, token, displayName, domain = 'meet.jit.si', onReadyToClose }: Props) {
+export function JitsiRoom({
+  roomName,
+  token,
+  displayName,
+  domain = 'meet.jit.si',
+  onReadyToClose,
+  startWithAudioMuted = true,
+  startWithVideoMuted = false,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<JitsiAPI | null>(null);
-  const audioMutedRef = useRef(true);
-  const videoMutedRef = useRef(false);
+  const audioMutedRef = useRef(startWithAudioMuted);
+  const videoMutedRef = useRef(startWithVideoMuted);
 
   useEffect(() => {
     if (!containerRef.current) return;

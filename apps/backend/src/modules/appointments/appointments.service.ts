@@ -11,6 +11,8 @@ import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { JwtUser } from '../../common/decorators/current-user.decorator';
 
+const VIDEO_ROOM_AVAILABILITY_MINUTES = 15;
+
 const VALID_TRANSITIONS: Record<AppointmentStatus, AppointmentStatus[]> = {
   PENDING: ['WAITING', 'CANCELLED'],
   WAITING: ['ACTIVE', 'CANCELLED'],
@@ -180,6 +182,15 @@ export class AppointmentsService {
     }
 
     this.assertCanModify(appt, user);
+
+    if (appt.status !== AppointmentStatus.ACTIVE) {
+      const minutesUntil = (appt.scheduledAt.getTime() - Date.now()) / 60_000;
+      if (minutesUntil > VIDEO_ROOM_AVAILABILITY_MINUTES) {
+        throw new BadRequestException(
+          `La sala de videoconsulta estará disponible ${VIDEO_ROOM_AVAILABILITY_MINUTES} minutos antes del turno (faltan ${Math.ceil(minutesUntil - VIDEO_ROOM_AVAILABILITY_MINUTES)} minutos)`,
+        );
+      }
+    }
 
     const token = this.videoTokenService.generateToken(appt.roomUuid, user);
     return { token, roomName: appt.roomUuid, domain: 'meet.jit.si' };

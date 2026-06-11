@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { JitsiRoom } from '@/components/video/JitsiRoom';
+import { DeviceCheckLobby } from '@/components/video/DeviceCheckLobby';
 import { SoapForm } from '@/components/evolution/SoapForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,20 +29,16 @@ export default function DoctorConsultationPage({
   const router = useRouter();
   const { user } = useAuth();
   const [videoData, setVideoData] = useState<VideoToken | null>(null);
+  const [muteOpts, setMuteOpts] = useState<{ audioMuted: boolean; videoMuted: boolean } | null>(null);
   const [medicalRecord, setMedicalRecord] = useState<MedicalRecord | null>(null);
-  const [patientId, setPatientId] = useState<string | null>(null);
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   useEffect(() => {
     api.get<{ patientId: string; patient: { id: string } }>(`/appointments/${appointmentId}`)
       .then(async (r) => {
         const pid = r.data.patient?.id ?? r.data.patientId;
-        setPatientId(pid);
-
-        const [video, record] = await Promise.all([
-          api.get<VideoToken>(`/appointments/${appointmentId}/video-token`),
-          api.get<MedicalRecord>(`/patients/${pid}/medical-record`),
-        ]);
-        setVideoData(video.data);
+        const record = await api.get<MedicalRecord>(`/patients/${pid}/medical-record`);
         setMedicalRecord(record.data);
       })
       .catch(() => {
@@ -58,7 +55,35 @@ export default function DoctorConsultationPage({
     }
   };
 
-  if (!videoData || !medicalRecord) {
+  const handleJoin = async (opts: { audioMuted: boolean; videoMuted: boolean }) => {
+    setJoining(true);
+    setJoinError(null);
+    try {
+      const { data } = await api.get<VideoToken>(`/appointments/${appointmentId}/video-token`);
+      setVideoData(data);
+      setMuteOpts(opts);
+    } catch (err) {
+      const raw = (err as { response?: { data?: { message?: string | { message?: string } } } })?.response?.data?.message;
+      const message = typeof raw === 'string' ? raw : raw?.message;
+      setJoinError(message ?? 'No se pudo ingresar a la sala de videoconsulta. Intentá nuevamente.');
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  if (!videoData || !muteOpts) {
+    return (
+      <DeviceCheckLobby
+        title="Sala de espera virtual"
+        subtitle="Verificá tu cámara y micrófono antes de ingresar a la consulta"
+        onJoin={handleJoin}
+        joining={joining}
+        joinError={joinError}
+      />
+    );
+  }
+
+  if (!medicalRecord) {
     return (
       <div className="flex flex-col lg:flex-row h-[calc(100dvh-9rem)] lg:h-screen overflow-hidden animate-pulse">
         {/* Skeleton — panel de video */}
@@ -102,6 +127,8 @@ export default function DoctorConsultationPage({
             displayName={user?.email ?? 'Doctor'}
             domain={videoData.domain}
             onReadyToClose={handleEnd}
+            startWithAudioMuted={muteOpts.audioMuted}
+            startWithVideoMuted={muteOpts.videoMuted}
           />
         </div>
       </div>

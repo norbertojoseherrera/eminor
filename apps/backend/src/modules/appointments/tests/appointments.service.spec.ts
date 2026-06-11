@@ -172,6 +172,43 @@ describe('AppointmentsService — máquina de estados', () => {
         NotFoundException,
       );
     });
+
+    it('bloquea token si faltan más de 15 minutos para el turno', async () => {
+      mockPrisma.appointment.findUnique.mockResolvedValue(
+        makeAppointment({
+          status: AppointmentStatus.PENDING,
+          scheduledAt: new Date(Date.now() + 30 * 60 * 1000),
+        }),
+      );
+
+      await expect(service.getVideoToken('appt-1', doctorUser)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('permite token si faltan 15 minutos o menos para el turno', async () => {
+      mockPrisma.appointment.findUnique.mockResolvedValue(
+        makeAppointment({
+          status: AppointmentStatus.WAITING,
+          scheduledAt: new Date(Date.now() + 10 * 60 * 1000),
+        }),
+      );
+
+      const result = await service.getVideoToken('appt-1', doctorUser);
+      expect(result).toHaveProperty('token', 'jitsi-jwt');
+    });
+
+    it('permite token para turno ACTIVE aunque el horario ya haya pasado', async () => {
+      mockPrisma.appointment.findUnique.mockResolvedValue(
+        makeAppointment({
+          status: AppointmentStatus.ACTIVE,
+          scheduledAt: new Date(Date.now() - 60 * 60 * 1000),
+        }),
+      );
+
+      const result = await service.getVideoToken('appt-1', doctorUser);
+      expect(result).toHaveProperty('token', 'jitsi-jwt');
+    });
   });
 
   describe('create — reserva de turno', () => {
