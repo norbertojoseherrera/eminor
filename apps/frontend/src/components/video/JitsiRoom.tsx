@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 
 interface JitsiAPI {
-  addEventListeners: (events: Record<string, () => void>) => void;
+  addEventListeners: (events: Record<string, (e?: { muted: boolean }) => void>) => void;
   dispose: () => void;
 }
 
@@ -22,17 +22,27 @@ interface Props {
   onReadyToClose?: () => void;
 }
 
+// meet.jit.si corta automaticamente las llamadas embebidas via iframe a los 5 minutos
+// ("Embedding meet.jit.si is only meant for demo purposes"). Para sostener consultas
+// mas largas, recreamos la sala antes de ese corte (reconexion silenciosa).
+const RECONNECT_INTERVAL_MS = 4 * 60 * 1000 + 30 * 1000; // 4:30
+
 export function JitsiRoom({ roomName, token, displayName, domain = 'meet.jit.si', onReadyToClose }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<JitsiAPI | null>(null);
+  const audioMutedRef = useRef(true);
+  const videoMutedRef = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     let cancelled = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const initJitsi = () => {
+    const createApi = () => {
       if (cancelled || !containerRef.current) return;
+
+      apiRef.current?.dispose();
 
       apiRef.current = new window.JitsiMeetExternalAPI(domain, {
         roomName,
@@ -40,7 +50,8 @@ export function JitsiRoom({ roomName, token, displayName, domain = 'meet.jit.si'
         parentNode: containerRef.current,
         userInfo: { displayName },
         configOverwrite: {
-          startWithAudioMuted: true,
+          startWithAudioMuted: audioMutedRef.current,
+          startWithVideoMuted: videoMutedRef.current,
           disableDeepLinking: true,
           prejoinPageEnabled: false,
         },
@@ -52,22 +63,27 @@ export function JitsiRoom({ roomName, token, displayName, domain = 'meet.jit.si'
 
       apiRef.current?.addEventListeners({
         readyToClose: () => onReadyToClose?.(),
+        audioMuteStatusChanged: (e) => { if (e) audioMutedRef.current = e.muted; },
+        videoMuteStatusChanged: (e) => { if (e) videoMutedRef.current = e.muted; },
       });
+
+      reconnectTimer = setTimeout(createApi, RECONNECT_INTERVAL_MS);
     };
 
     let script: HTMLScriptElement | null = null;
     if (window.JitsiMeetExternalAPI) {
-      initJitsi();
+      createApi();
     } else {
       script = document.createElement('script');
       script.src = `https://${domain}/external_api.js`;
       script.async = true;
-      script.onload = initJitsi;
+      script.onload = createApi;
       document.head.appendChild(script);
     }
 
     return () => {
       cancelled = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       apiRef.current?.dispose();
       apiRef.current = null;
       if (script) document.head.removeChild(script);
