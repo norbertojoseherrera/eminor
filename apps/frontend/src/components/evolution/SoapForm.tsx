@@ -106,13 +106,18 @@ export function SoapForm({ appointmentId, reasonNotes, specialty, onSaved }: Pro
   };
 
   const addCie10 = () => {
-    const code = cie10Input.trim().toUpperCase();
-    if (!/^[A-Z]\d{2}(\.\d)?$/.test(code)) {
+    const code = cie10Input.trim().toUpperCase().replace(/\s+/g, '');
+    if (!/^[A-Z]\d{2}(\.\d{1,2})?$/.test(code)) {
       toast.error('Código CIE-10 inválido. Ej: J18.9 o A09');
       return;
     }
-    if (!cie10Codes.includes(code)) setCie10Codes([...cie10Codes, code]);
+    if (cie10Codes.includes(code)) {
+      toast.error('Ese código ya fue agregado');
+      return;
+    }
+    setCie10Codes([...cie10Codes, code]);
     setCie10Input('');
+    toast.success(`Código ${code} agregado`);
   };
 
   const onSubmit = async (data: FormData) => {
@@ -130,8 +135,10 @@ export function SoapForm({ appointmentId, reasonNotes, specialty, onSaved }: Pro
       setEvolutionId(res.data.id);
       toast.success('Evolución guardada correctamente');
       onSaved?.(res.data.id);
-    } catch {
-      toast.error('Error al guardar la evolución');
+    } catch (err) {
+      const raw = (err as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
+      const message = Array.isArray(raw) ? raw.join('. ') : raw;
+      toast.error(message ?? 'Error al guardar la evolución');
     } finally { setSaving(false); }
   };
 
