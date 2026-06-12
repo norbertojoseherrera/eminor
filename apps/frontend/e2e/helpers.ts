@@ -3,7 +3,7 @@ import { Page } from '@playwright/test';
 export async function loginAs(page: Page, role: 'patient' | 'doctor' | 'admin') {
   const creds = {
     patient: { email: 'paciente@eminor.com', password: 'Patient1234!', path: '/patient/appointments' },
-    doctor:  { email: 'doctor@eminor.com',   password: 'Doctor1234!',  path: '/doctor/schedule' },
+    doctor:  { email: 'rsanchez@eminor.com', password: 'Doctor1234!',  path: '/doctor/schedule' },
     admin:   { email: 'admin@eminor.com',    password: 'Admin1234!',   path: '/admin/users' },
   }[role];
 

@@ -34,10 +34,10 @@ async function main() {
 
   const doctorHash = await bcrypt.hash('Doctor1234!', 12);
   const doctor = await prisma.user.upsert({
-    where: { email: 'doctor@eminor.com' },
+    where: { email: 'rsanchez@eminor.com' },
     update: {},
     create: {
-      email: 'doctor@eminor.com',
+      email: 'rsanchez@eminor.com',
       passwordHash: doctorHash,
       role: Role.DOCTOR,
       doctor: {
@@ -45,8 +45,8 @@ async function main() {
           licenseNumber: 'MN-12345',
           specialty: 'Medicina General',
           isVerified: true,
-          firstName: 'Carlos',
-          lastName: 'García',
+          firstName: 'Roberto',
+          lastName: 'Sánchez',
         },
       },
     },
@@ -57,7 +57,7 @@ async function main() {
   // dayOfWeek: 0=Domingo .. 6=Sábado
   const extraDoctors = [
     {
-      email: 'cardiologia@eminor.com',
+      email: 'lfernandez@eminor.com',
       licenseNumber: 'MN-20001',
       specialty: 'Cardiología',
       firstName: 'Laura',
@@ -69,7 +69,7 @@ async function main() {
       ],
     },
     {
-      email: 'pediatria@eminor.com',
+      email: 'mperez@eminor.com',
       licenseNumber: 'MN-20002',
       specialty: 'Pediatría',
       firstName: 'Martín',
@@ -80,7 +80,7 @@ async function main() {
       ],
     },
     {
-      email: 'dermatologia@eminor.com',
+      email: 'sgomez@eminor.com',
       licenseNumber: 'MN-20003',
       specialty: 'Dermatología',
       firstName: 'Sofía',
@@ -94,7 +94,7 @@ async function main() {
       ],
     },
     {
-      email: 'ginecologia@eminor.com',
+      email: 'dtorres@eminor.com',
       licenseNumber: 'MN-20004',
       specialty: 'Ginecología',
       firstName: 'Diego',
@@ -105,7 +105,7 @@ async function main() {
       ],
     },
     {
-      email: 'traumatologia@eminor.com',
+      email: 'vruiz@eminor.com',
       licenseNumber: 'MN-20005',
       specialty: 'Traumatología',
       firstName: 'Valeria',
@@ -205,14 +205,14 @@ async function main() {
   console.log('Seed complete!');
   console.log('─────────────────────────────────────');
   console.log('Test credentials:');
-  console.log('  Admin:   admin@eminor.com         / Admin1234!');
-  console.log('  Doctor:  doctor@eminor.com        / Doctor1234!  (Medicina General)');
-  console.log('  Doctor:  cardiologia@eminor.com   / Doctor1234!  (Cardiología)');
-  console.log('  Doctor:  pediatria@eminor.com     / Doctor1234!  (Pediatría)');
-  console.log('  Doctor:  dermatologia@eminor.com  / Doctor1234!  (Dermatología)');
-  console.log('  Doctor:  ginecologia@eminor.com   / Doctor1234!  (Ginecología)');
-  console.log('  Doctor:  traumatologia@eminor.com / Doctor1234!  (Traumatología)');
-  console.log('  Patient: paciente@eminor.com      / Patient1234!');
+  console.log('  Admin:   admin@eminor.com     / Admin1234!');
+  console.log('  Doctor:  rsanchez@eminor.com   / Doctor1234!  (Medicina General)');
+  console.log('  Doctor:  lfernandez@eminor.com / Doctor1234!  (Cardiología)');
+  console.log('  Doctor:  mperez@eminor.com     / Doctor1234!  (Pediatría)');
+  console.log('  Doctor:  sgomez@eminor.com     / Doctor1234!  (Dermatología)');
+  console.log('  Doctor:  dtorres@eminor.com    / Doctor1234!  (Ginecología)');
+  console.log('  Doctor:  vruiz@eminor.com      / Doctor1234!  (Traumatología)');
+  console.log('  Patient: paciente@eminor.com   / Patient1234!');
 }
 
 main()
