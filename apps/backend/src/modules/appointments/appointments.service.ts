@@ -49,7 +49,14 @@ export class AppointmentsService {
     return this.prisma.appointment.findMany({
       where: { patientId: patient.id },
       include: {
-        doctor: { select: { licenseNumber: true, specialty: true } },
+        doctor: {
+          select: {
+            licenseNumber: true,
+            specialty: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
       },
       orderBy: { scheduledAt: 'desc' },
     });
@@ -62,12 +69,33 @@ export class AppointmentsService {
     const appointments = await this.prisma.appointment.findMany({
       where: { doctorId: doctor.id },
       include: {
-        patient: { select: { id: true, firstName: true, lastName: true, dni: true, phone: true, medicalInsurance: true } },
+        patient: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            dni: true,
+            phone: true,
+            medicalInsurance: true,
+          },
+        },
       },
       orderBy: { scheduledAt: 'desc' },
     });
 
-    const patients = new Map<string, { id: string; firstName: string; lastName: string; dni: string; phone: string; medicalInsurance: string | null; lastAppointment: Date; appointmentsCount: number }>();
+    const patients = new Map<
+      string,
+      {
+        id: string;
+        firstName: string;
+        lastName: string;
+        dni: string;
+        phone: string;
+        medicalInsurance: string | null;
+        lastAppointment: Date;
+        appointmentsCount: number;
+      }
+    >();
     for (const appt of appointments) {
       const existing = patients.get(appt.patient.id);
       if (existing) {
@@ -81,14 +109,18 @@ export class AppointmentsService {
       }
     }
 
-    return [...patients.values()].sort((a, b) => a.lastName.localeCompare(b.lastName, 'es'));
+    return [...patients.values()].sort((a, b) =>
+      a.lastName.localeCompare(b.lastName, 'es'),
+    );
   }
 
   async create(dto: CreateAppointmentDto, user: JwtUser) {
     let patientId = dto.patientId;
 
     if (user.role === Role.PATIENT) {
-      const patient = await this.prisma.patient.findUnique({ where: { userId: user.id } });
+      const patient = await this.prisma.patient.findUnique({
+        where: { userId: user.id },
+      });
       if (!patient) throw new NotFoundException('Patient profile not found');
       patientId = patient.id;
     }
@@ -110,7 +142,9 @@ export class AppointmentsService {
       },
     });
     if (conflict) {
-      throw new BadRequestException('El horario seleccionado ya no está disponible');
+      throw new BadRequestException(
+        'El horario seleccionado ya no está disponible',
+      );
     }
 
     return this.prisma.appointment.create({
@@ -218,7 +252,14 @@ export class AppointmentsService {
         orderBy: { scheduledAt: 'desc' },
         include: {
           patient: { select: { firstName: true, lastName: true, dni: true } },
-          doctor: { select: { firstName: true, lastName: true, licenseNumber: true, specialty: true } },
+          doctor: {
+            select: {
+              firstName: true,
+              lastName: true,
+              licenseNumber: true,
+              specialty: true,
+            },
+          },
         },
       }),
       this.prisma.appointment.count({ where }),
@@ -242,7 +283,9 @@ export class AppointmentsService {
         },
       });
       if (conflict) {
-        throw new BadRequestException('El horario seleccionado ya no está disponible');
+        throw new BadRequestException(
+          'El horario seleccionado ya no está disponible',
+        );
       }
     }
 
@@ -256,7 +299,14 @@ export class AppointmentsService {
       },
       include: {
         patient: { select: { firstName: true, lastName: true, dni: true } },
-        doctor: { select: { firstName: true, lastName: true, licenseNumber: true, specialty: true } },
+        doctor: {
+          select: {
+            firstName: true,
+            lastName: true,
+            licenseNumber: true,
+            specialty: true,
+          },
+        },
       },
     });
   }
@@ -270,7 +320,10 @@ export class AppointmentsService {
   }
 
   private assertCanModify(
-    appt: { patient: { userId: string } | null; doctor: { userId: string } | null },
+    appt: {
+      patient: { userId: string } | null;
+      doctor: { userId: string } | null;
+    },
     user: JwtUser,
   ) {
     if (user.role === Role.ADMIN) return;
@@ -279,7 +332,9 @@ export class AppointmentsService {
     const isDoctor = appt.doctor?.userId === user.id;
 
     if (!isPatient && !isDoctor) {
-      throw new ForbiddenException('You do not have access to this appointment');
+      throw new ForbiddenException(
+        'You do not have access to this appointment',
+      );
     }
   }
 }

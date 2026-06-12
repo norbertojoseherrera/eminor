@@ -73,6 +73,11 @@ export default function PatientAppointmentsPage() {
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div>
                   <p className="font-semibold text-foreground">{appt.doctor?.specialty ?? 'Consulta médica'}</p>
+                  {appt.doctor?.firstName && (
+                    <p className="text-sm text-foreground/80 mt-0.5">
+                      Dr./Dra. {appt.doctor.firstName} {appt.doctor.lastName}
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground mt-0.5">
                     Mat. {appt.doctor?.licenseNumber}
                   </p>
