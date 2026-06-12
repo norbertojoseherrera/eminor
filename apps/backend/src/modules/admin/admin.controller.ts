@@ -6,11 +6,13 @@ import {
   Body,
   Param,
   Query,
+  Res,
   UseGuards,
   ParseUUIDPipe,
   ParseIntPipe,
   DefaultValuePipe,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { Role } from '@prisma/client';
 import { AdminService } from './admin.service';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
@@ -54,5 +56,54 @@ export class AdminController {
   @Get('stats')
   getStats() {
     return this.adminService.getStats();
+  }
+
+  @Get('patients')
+  getPatients(@Query('search') search?: string) {
+    return this.adminService.getPatients(search);
+  }
+
+  @Get('patients/:id/records')
+  getPatientRecords(@Param('id', ParseUUIDPipe) id: string) {
+    return this.adminService.getPatientRecords(id);
+  }
+
+  @Get('evolutions/:id/pdf')
+  async getEvolutionPdf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
+    const { buffer, filename } = await this.adminService.getEvolutionPdf(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+    res.send(buffer);
+  }
+
+  @Get('prescriptions/:id/pdf')
+  async getPrescriptionPdf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
+    const { buffer, filename } = await this.adminService.getPrescriptionPdf(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+    res.send(buffer);
+  }
+
+  @Get('certificates/:id/pdf')
+  async getCertificatePdf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
+    const { buffer, filename } = await this.adminService.getCertificatePdf(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+    res.send(buffer);
   }
 }

@@ -68,6 +68,9 @@ export interface Evolution {
   isSigned: boolean;
   signedAt?: string;
   createdAt: string;
+  appointment?: {
+    doctor?: Pick<Doctor, 'licenseNumber' | 'specialty' | 'firstName' | 'lastName'>;
+  };
 }
 
 export interface Study {
@@ -92,9 +95,27 @@ export interface Prescription {
   medicationPayload: { medications: MedicationItem[]; instructions?: string };
   digitalSignatureHash: string;
   issuedAt: string;
+  appointment?: {
+    doctor?: Pick<Doctor, 'licenseNumber' | 'specialty' | 'firstName' | 'lastName'>;
+  };
 }
 
 export type CertificateType = 'ATTENDANCE' | 'REST' | 'FITNESS' | 'OTHER';
+
+export interface AdminPatientSummary {
+  id: string;
+  firstName: string;
+  lastName: string;
+  dni: string;
+  user: { email: string };
+}
+
+export interface AdminPatientRecords {
+  patient: Patient;
+  evolutions: Evolution[];
+  prescriptions: Prescription[];
+  certificates: Certificate[];
+}
 
 export interface Certificate {
   id: string;
@@ -106,6 +127,6 @@ export interface Certificate {
   digitalSignatureHash: string;
   issuedAt: string;
   appointment?: {
-    doctor?: { licenseNumber: string; specialty: string };
+    doctor?: Pick<Doctor, 'licenseNumber' | 'specialty' | 'firstName' | 'lastName'>;
   };
 }

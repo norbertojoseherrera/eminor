@@ -24,6 +24,7 @@ const doctorNav = [
 const adminNav = [
   { href: '/admin/users',       label: 'Usuarios',        icon: '👤' },
   { href: '/admin/appointments', label: 'Turnos',         icon: '🗓️' },
+  { href: '/admin/records',     label: 'Registros Médicos', icon: '📋' },
   { href: '/admin/audit-logs',  label: 'Audit Logs',      icon: '🔍' },
   { href: '/admin/stats',       label: 'Estadísticas',    icon: '📊' },
 ];
