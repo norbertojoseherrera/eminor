@@ -21,7 +21,11 @@ const mockPrisma = {
 };
 
 const mockVideoToken = {
-  generateToken: jest.fn().mockReturnValue('jitsi-jwt'),
+  generateRoomInfo: jest.fn().mockReturnValue({
+    token: 'jitsi-jwt',
+    roomName: 'room-uuid-1',
+    domain: '8x8.vc',
+  }),
 };
 
 const makeAppointment = (overrides = {}) => ({

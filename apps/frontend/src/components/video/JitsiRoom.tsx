@@ -24,11 +24,6 @@ interface Props {
   startWithVideoMuted?: boolean;
 }
 
-// meet.jit.si corta automaticamente las llamadas embebidas via iframe a los 5 minutos
-// ("Embedding meet.jit.si is only meant for demo purposes"). Para sostener consultas
-// mas largas, recreamos la sala antes de ese corte (reconexion silenciosa).
-const RECONNECT_INTERVAL_MS = 4 * 60 * 1000 + 30 * 1000; // 4:30
-
 export function JitsiRoom({
   roomName,
   token,
@@ -47,7 +42,6 @@ export function JitsiRoom({
     if (!containerRef.current) return;
 
     let cancelled = false;
-    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
     const createApi = () => {
       if (cancelled || !containerRef.current) return;
@@ -76,16 +70,18 @@ export function JitsiRoom({
         audioMuteStatusChanged: (e) => { if (e) audioMutedRef.current = e.muted; },
         videoMuteStatusChanged: (e) => { if (e) videoMutedRef.current = e.muted; },
       });
-
-      reconnectTimer = setTimeout(createApi, RECONNECT_INTERVAL_MS);
     };
+
+    // En 8x8 JaaS, el script externo se sirve bajo el path del App ID
+    // (prefijo de roomName: "<appId>/<roomUuid>").
+    const scriptPath = domain === '8x8.vc' ? `${roomName.split('/')[0]}/external_api.js` : 'external_api.js';
 
     let script: HTMLScriptElement | null = null;
     if (window.JitsiMeetExternalAPI) {
       createApi();
     } else {
       script = document.createElement('script');
-      script.src = `https://${domain}/external_api.js`;
+      script.src = `https://${domain}/${scriptPath}`;
       script.async = true;
       script.onload = createApi;
       document.head.appendChild(script);
@@ -93,7 +89,6 @@ export function JitsiRoom({
 
     return () => {
       cancelled = true;
-      if (reconnectTimer) clearTimeout(reconnectTimer);
       apiRef.current?.dispose();
       apiRef.current = null;
       if (script) document.head.removeChild(script);

@@ -3,36 +3,60 @@ import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
 import { JwtUser } from '../../common/decorators/current-user.decorator';
 
+export interface RoomInfo {
+  token: string;
+  roomName: string;
+  domain: string;
+}
+
 @Injectable()
 export class VideoTokenService {
   constructor(private readonly config: ConfigService) {}
 
-  generateToken(roomUuid: string, user: JwtUser): string {
-    const appId = this.config.get<string>('jitsi.appId') ?? 'eminor';
-    const appSecret = this.config.get<string>('jitsi.appSecret');
+  generateRoomInfo(roomUuid: string, user: JwtUser): RoomInfo {
+    const appId = this.config.get<string>('jitsi.appId');
+    const kid = this.config.get<string>('jitsi.kid');
+    const privateKey = this.config.get<string>('jitsi.privateKey');
 
+    // Sin credenciales de 8x8 JaaS configuradas, se usa meet.jit.si sin JWT
+    // (modo demo, válido solo para desarrollo local).
+    if (!appId || !kid || !privateKey) {
+      return { token: '', roomName: roomUuid, domain: 'meet.jit.si' };
+    }
+
+    const now = Math.floor(Date.now() / 1000);
     const payload = {
-      iss: appId,
-      sub: 'meet.jit.si',
       aud: 'jitsi',
+      iss: 'chat',
+      sub: appId,
       room: roomUuid,
-      exp: Math.floor(Date.now() / 1000) + 3600,
+      exp: now + 3600,
+      nbf: now - 10,
       context: {
         user: {
           id: user.id,
           name: user.email,
+          email: user.email,
           moderator: user.role === 'DOCTOR',
+        },
+        features: {
+          livestreaming: false,
+          'file-upload': false,
+          'outbound-call': false,
+          'sip-outbound-call': false,
+          transcription: false,
+          'list-visitors': false,
+          recording: false,
+          flip: false,
         },
       },
     };
 
-    // meet.jit.si público no valida JWT con un emisor/secreto propio: enviar un
-    // token firmado con un secreto de desarrollo provoca "Authentication failed".
-    // Solo se genera el JWT si hay un proveedor de auth (JaaS / Jitsi propio) configurado.
-    if (!appSecret) {
-      return '';
-    }
+    const token = jwt.sign(payload, privateKey, {
+      algorithm: 'RS256',
+      keyid: kid,
+    });
 
-    return jwt.sign(payload, appSecret);
+    return { token, roomName: `${appId}/${roomUuid}`, domain: '8x8.vc' };
   }
 }

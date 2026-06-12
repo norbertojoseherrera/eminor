@@ -19,7 +19,10 @@ export default () => ({
     bucket: process.env.R2_BUCKET ?? 'eminor-studies',
   },
   jitsi: {
-    appId: process.env.JITSI_APP_ID ?? 'eminor',
-    appSecret: process.env.JITSI_APP_SECRET,
+    appId: process.env.JITSI_APP_ID,
+    kid: process.env.JITSI_KID,
+    privateKey: process.env.JITSI_PRIVATE_KEY_BASE64
+      ? Buffer.from(process.env.JITSI_PRIVATE_KEY_BASE64, 'base64').toString('utf-8')
+      : undefined,
   },
 });

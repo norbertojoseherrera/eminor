@@ -192,8 +192,7 @@ export class AppointmentsService {
       }
     }
 
-    const token = this.videoTokenService.generateToken(appt.roomUuid, user);
-    return { token, roomName: appt.roomUuid, domain: 'meet.jit.si' };
+    return this.videoTokenService.generateRoomInfo(appt.roomUuid, user);
   }
 
   async findAllAdmin(filters: {
