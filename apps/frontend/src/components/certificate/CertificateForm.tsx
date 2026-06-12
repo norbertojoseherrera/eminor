@@ -17,19 +17,39 @@ const TYPE_LABELS: Record<CertificateType, string> = {
   OTHER: 'Otro',
 };
 
+const TYPE_CONTENT_SUGGESTIONS: Record<CertificateType, string> = {
+  ATTENDANCE: 'Se certifica que el/la paciente asistió a la consulta médica en el día de la fecha y que su estado de salud le permite asistir con normalidad a su establecimiento educativo/laboral.',
+  REST: 'Se certifica que el/la paciente requiere reposo por 24 horas a partir de la fecha, debido al cuadro clínico evaluado en la presente consulta.',
+  FITNESS: 'Se certifica que el/la paciente se encuentra apto/a para desempeñarse en sus actividades físicas habituales, sin restricciones, según la evaluación realizada en la presente consulta.',
+  OTHER: '',
+};
+
 interface Props {
   appointmentId: string;
   completed: boolean;
+  evolutionSaved: boolean;
   onComplete: () => Promise<void>;
+  onGoToSoap?: () => void;
 }
 
-export function CertificateForm({ appointmentId, completed, onComplete }: Props) {
+export function CertificateForm({ appointmentId, completed, evolutionSaved, onComplete, onGoToSoap }: Props) {
   const [type, setType] = useState<CertificateType>('ATTENDANCE');
   const [content, setContent] = useState('');
   const [restDays, setRestDays] = useState('');
   const [saving, setSaving] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [issued, setIssued] = useState(false);
+
+  const applySuggestion = (t: CertificateType) => {
+    const suggestion = TYPE_CONTENT_SUGGESTIONS[t];
+    if (suggestion) setContent(suggestion);
+    if (t === 'REST' && !restDays) setRestDays('1');
+  };
+
+  const handleTypeChange = (t: CertificateType) => {
+    setType(t);
+    if (!content.trim()) applySuggestion(t);
+  };
 
   const handleComplete = async () => {
     setCompleting(true);
@@ -76,6 +96,21 @@ export function CertificateForm({ appointmentId, completed, onComplete }: Props)
   }
 
   if (!completed) {
+    if (!evolutionSaved) {
+      return (
+        <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl text-center space-y-3">
+          <p className="text-sm text-amber-800">
+            Para finalizar la consulta primero hay que completar y guardar la evolución SOAP.
+          </p>
+          {onGoToSoap && (
+            <Button type="button" variant="outline" onClick={onGoToSoap}
+              className="rounded-xl">
+              Ir a Evolución SOAP
+            </Button>
+          )}
+        </div>
+      );
+    }
     return (
       <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl text-center space-y-3">
         <p className="text-sm text-amber-800">
@@ -93,7 +128,7 @@ export function CertificateForm({ appointmentId, completed, onComplete }: Props)
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label className="text-sm font-semibold text-foreground/80">Tipo de certificado</Label>
-        <Select value={type} onValueChange={(v) => setType(v as CertificateType)}>
+        <Select value={type} onValueChange={(v) => handleTypeChange(v as CertificateType)}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Tipo">
               {(value: CertificateType) => TYPE_LABELS[value]}
@@ -108,7 +143,15 @@ export function CertificateForm({ appointmentId, completed, onComplete }: Props)
       </div>
 
       <div className="space-y-2">
-        <Label className="text-sm font-semibold text-foreground/80">Contenido</Label>
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-semibold text-foreground/80">Contenido</Label>
+          {TYPE_CONTENT_SUGGESTIONS[type] && (
+            <Button type="button" variant="outline" size="sm" onClick={() => applySuggestion(type)}
+              className="rounded-xl h-7 text-xs">
+              💡 Sugerir texto
+            </Button>
+          )}
+        </div>
         <Textarea
           rows={4}
           placeholder="Detalle del certificado..."

@@ -22,8 +22,43 @@ type FormData = z.infer<typeof schema>;
 
 interface Props {
   appointmentId: string;
+  reasonNotes?: string;
+  specialty?: string;
   onSaved?: (evolutionId: string) => void;
 }
+
+const DEFAULT_TEMPLATES: Record<string, { objective: string; assessment: string; plan: string }> = {
+  'Pediatría': {
+    objective: 'Buen estado general, activo/a y reactivo/a. Peso, talla y signos vitales acordes a la edad. Examen físico por aparatos sin hallazgos patológicos significativos.',
+    assessment: 'Paciente pediátrico en buen estado general. Sin signos de alarma al momento de la consulta.',
+    plan: 'Continuar controles de rutina según calendario. Pautas de alarma indicadas a los padres/tutores. Reconsultar ante fiebre persistente, decaimiento o empeoramiento de síntomas.',
+  },
+  'Traumatología': {
+    objective: 'Marcha conservada. Sin deformidades visibles. Movilidad articular dentro de rangos esperables, con dolor referido a la palpación en la zona afectada.',
+    assessment: 'Cuadro compatible con afección osteoarticular/muscular de tipo mecánico, a confirmar con estudios complementarios si corresponde.',
+    plan: 'Reposo relativo de la zona afectada, frío local, analgesia según indicación. Solicitar estudios por imágenes si no hay mejoría. Control en 7 a 10 días.',
+  },
+  'Cardiología': {
+    objective: 'Ruidos cardíacos regulares, sin soplos audibles. Tensión arterial y frecuencia cardíaca dentro de parámetros normales. Sin signos de insuficiencia cardíaca.',
+    assessment: 'Paciente cardiovascularmente estable al momento de la consulta.',
+    plan: 'Continuar tratamiento habitual. Control de factores de riesgo cardiovascular (dieta, actividad física, adherencia a medicación). Próximo control según indicación.',
+  },
+  'Dermatología': {
+    objective: 'Lesión/es cutánea/s descripta/s por el paciente, sin signos de sobreinfección al momento del examen.',
+    assessment: 'Cuadro dermatológico a evaluar evolución, sin signos de gravedad actual.',
+    plan: 'Indicaciones de cuidado local de la piel, fotoprotección y tratamiento tópico según corresponda. Control en caso de no mejoría en 1-2 semanas.',
+  },
+  'Ginecología': {
+    objective: 'Examen físico sin hallazgos relevantes al momento de la consulta. Signos vitales normales.',
+    assessment: 'Sin hallazgos de alarma al momento de la consulta.',
+    plan: 'Continuar controles ginecológicos de rutina. Pautas de alarma indicadas. Próximo control programado.',
+  },
+  default: {
+    objective: 'Buen estado general. Signos vitales dentro de parámetros normales. Examen físico sin hallazgos patológicos significativos.',
+    assessment: 'Paciente en buen estado general al momento de la consulta, sin signos de alarma.',
+    plan: 'Continuar con las indicaciones habituales. Pautas de alarma brindadas al paciente. Control según evolución de los síntomas.',
+  },
+};
 
 const SoapSection = ({ label, letter, color, children }: { label: string; letter: string; color: string; children: React.ReactNode }) => (
   <div className="space-y-2">
@@ -35,16 +70,40 @@ const SoapSection = ({ label, letter, color, children }: { label: string; letter
   </div>
 );
 
-export function SoapForm({ appointmentId, onSaved }: Props) {
+export function SoapForm({ appointmentId, reasonNotes, specialty, onSaved }: Props) {
   const [cie10Input, setCie10Input] = useState('');
   const [cie10Codes, setCie10Codes] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [evolutionId, setEvolutionId] = useState<string | null>(null);
   const [signed, setSigned] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, getValues, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
+
+  const applySuggestions = () => {
+    const templates = DEFAULT_TEMPLATES[specialty ?? ''] ?? DEFAULT_TEMPLATES.default;
+    const values = getValues();
+
+    if (!values.subjective?.trim()) {
+      setValue(
+        'subjective',
+        reasonNotes?.trim()
+          ? `Paciente consulta por: ${reasonNotes.trim()}.`
+          : 'Paciente refiere síntomas que motivan la consulta. Sin antecedentes relevantes referidos.',
+        { shouldValidate: true },
+      );
+    }
+    if (!values.objective?.trim()) {
+      setValue('objective', templates.objective, { shouldValidate: true });
+    }
+    if (!values.assessmentText?.trim()) {
+      setValue('assessmentText', templates.assessment, { shouldValidate: true });
+    }
+    if (!values.plan?.trim()) {
+      setValue('plan', templates.plan, { shouldValidate: true });
+    }
+  };
 
   const addCie10 = () => {
     const code = cie10Input.trim().toUpperCase();
@@ -95,6 +154,19 @@ export function SoapForm({ appointmentId, onSaved }: Props) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {!evolutionId && (
+        <div className="flex items-start justify-between gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+          <p className="text-xs text-blue-700">
+            Completá los campos vacíos con texto sugerido en base al motivo de consulta
+            {specialty ? ` y la especialidad (${specialty})` : ''}. Podés editarlo libremente.
+          </p>
+          <Button type="button" variant="outline" size="sm" onClick={applySuggestions}
+            className="rounded-xl h-8 text-xs shrink-0 bg-white">
+            💡 Sugerir texto
+          </Button>
+        </div>
+      )}
+
       <SoapSection label="Subjetivo" letter="S" color="bg-amber-500">
         <Textarea placeholder="Motivo de consulta, síntomas referidos por el paciente..." rows={3}
           className="rounded-xl text-sm resize-none" {...register('subjective')} disabled={!!evolutionId} />

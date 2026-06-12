@@ -191,6 +191,17 @@ export class AppointmentsService {
 
     this.assertCanModify(appt, user);
 
+    if (newStatus === AppointmentStatus.COMPLETED) {
+      const evolution = await this.prisma.evolution.findFirst({
+        where: { appointmentId: id },
+      });
+      if (!evolution) {
+        throw new BadRequestException(
+          'Debés guardar la evolución SOAP antes de finalizar la consulta',
+        );
+      }
+    }
+
     return this.prisma.appointment.update({
       where: { id },
       data: { status: newStatus },
@@ -223,6 +234,13 @@ export class AppointmentsService {
         throw new BadRequestException(
           `La sala de videoconsulta estará disponible ${VIDEO_ROOM_AVAILABILITY_MINUTES} minutos antes del turno (faltan ${Math.ceil(minutesUntil - VIDEO_ROOM_AVAILABILITY_MINUTES)} minutos)`,
         );
+      }
+
+      if (user.role === Role.DOCTOR) {
+        await this.prisma.appointment.update({
+          where: { id: appt.id },
+          data: { status: AppointmentStatus.ACTIVE },
+        });
       }
     }
 

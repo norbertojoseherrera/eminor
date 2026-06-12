@@ -9,6 +9,7 @@ import { JitsiRoom } from '@/components/video/JitsiRoom';
 import { DeviceCheckLobby } from '@/components/video/DeviceCheckLobby';
 import { SoapForm } from '@/components/evolution/SoapForm';
 import { CertificateForm } from '@/components/certificate/CertificateForm';
+import { PrescriptionForm } from '@/components/prescription/PrescriptionForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Evolution, Study } from '@/types';
@@ -35,13 +36,20 @@ export default function DoctorConsultationPage({
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
+  const [evolutionSaved, setEvolutionSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState('soap');
+  const [appointmentInfo, setAppointmentInfo] = useState<{ notes?: string; specialty?: string } | null>(null);
 
   useEffect(() => {
-    api.get<{ patientId: string; patient: { id: string } }>(`/appointments/${appointmentId}`)
+    api.get<{ patientId: string; notes?: string; patient: { id: string }; doctor?: { specialty?: string } }>(`/appointments/${appointmentId}`)
       .then(async (r) => {
         const pid = r.data.patient?.id ?? r.data.patientId;
+        setAppointmentInfo({ notes: r.data.notes, specialty: r.data.doctor?.specialty });
         const record = await api.get<MedicalRecord>(`/patients/${pid}/medical-record`);
         setMedicalRecord(record.data);
+        if (record.data.evolutions.some((evo) => evo.appointmentId === appointmentId)) {
+          setEvolutionSaved(true);
+        }
       })
       .catch(() => {
         toast.error('Error al cargar la consulta');
@@ -51,8 +59,10 @@ export default function DoctorConsultationPage({
 
   const handleEnd = async () => {
     try {
-      if (!completed) {
+      if (!completed && evolutionSaved) {
         await api.patch(`/appointments/${appointmentId}/status`, { status: 'COMPLETED' });
+      } else if (!completed && !evolutionSaved) {
+        toast.error('No se finalizó la consulta: falta guardar la evolución SOAP. Podés hacerlo desde "Historial / Turnos".');
       }
     } finally {
       router.push('/doctor/schedule');
@@ -60,6 +70,11 @@ export default function DoctorConsultationPage({
   };
 
   const handleComplete = async () => {
+    if (!evolutionSaved) {
+      toast.error('Guardá la evolución SOAP antes de finalizar la consulta');
+      setActiveTab('soap');
+      return;
+    }
     await api.patch(`/appointments/${appointmentId}/status`, { status: 'COMPLETED' });
     setCompleted(true);
   };
@@ -144,20 +159,42 @@ export default function DoctorConsultationPage({
 
       {/* Panel de HCE + SOAP */}
       <div className="flex-1 lg:w-1/2 overflow-y-auto bg-white min-h-0">
-        <Tabs defaultValue="soap" className="h-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
           <TabsList className="w-full rounded-none border-b">
             <TabsTrigger value="soap" className="flex-1">Nueva Evolución SOAP</TabsTrigger>
+            <TabsTrigger value="prescription" className="flex-1">Receta</TabsTrigger>
             <TabsTrigger value="certificate" className="flex-1">Certificado</TabsTrigger>
             <TabsTrigger value="history" className="flex-1">Historial HCE</TabsTrigger>
             <TabsTrigger value="studies" className="flex-1">Estudios</TabsTrigger>
           </TabsList>
 
           <TabsContent value="soap" className="p-4">
-            <SoapForm appointmentId={appointmentId} onSaved={() => {}} />
+            <SoapForm
+              appointmentId={appointmentId}
+              reasonNotes={appointmentInfo?.notes}
+              specialty={appointmentInfo?.specialty}
+              onSaved={() => setEvolutionSaved(true)}
+            />
+          </TabsContent>
+
+          <TabsContent value="prescription" className="p-4">
+            <PrescriptionForm
+              appointmentId={appointmentId}
+              completed={completed}
+              evolutionSaved={evolutionSaved}
+              onComplete={handleComplete}
+              onGoToSoap={() => setActiveTab('soap')}
+            />
           </TabsContent>
 
           <TabsContent value="certificate" className="p-4">
-            <CertificateForm appointmentId={appointmentId} completed={completed} onComplete={handleComplete} />
+            <CertificateForm
+              appointmentId={appointmentId}
+              completed={completed}
+              evolutionSaved={evolutionSaved}
+              onComplete={handleComplete}
+              onGoToSoap={() => setActiveTab('soap')}
+            />
           </TabsContent>
 
           <TabsContent value="history" className="p-4 space-y-3">
