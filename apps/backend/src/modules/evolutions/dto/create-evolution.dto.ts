@@ -5,7 +5,6 @@ import {
   ValidateNested,
   IsArray,
   Matches,
-  ArrayMinSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -15,9 +14,8 @@ export class AssessmentDto {
   text: string;
 
   @IsArray()
-  @ArrayMinSize(1)
   @IsString({ each: true })
-  @Matches(/^[A-Z]\d{2}(\.\d)?$/, {
+  @Matches(/^[A-Z]\d{2}(\.\d{1,2})?$/, {
     each: true,
     message: 'CIE-10 code must be in format like "J18.9" or "A09"',
   })

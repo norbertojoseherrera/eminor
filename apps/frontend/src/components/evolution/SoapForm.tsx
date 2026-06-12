@@ -107,6 +107,7 @@ export function SoapForm({ appointmentId, reasonNotes, specialty, onSaved }: Pro
 
   const addCie10 = () => {
     const code = cie10Input.trim().toUpperCase().replace(/\s+/g, '');
+    if (!code) return;
     if (!/^[A-Z]\d{2}(\.\d{1,2})?$/.test(code)) {
       toast.error('Código CIE-10 inválido. Ej: J18.9 o A09');
       return;
@@ -121,7 +122,6 @@ export function SoapForm({ appointmentId, reasonNotes, specialty, onSaved }: Pro
   };
 
   const onSubmit = async (data: FormData) => {
-    if (cie10Codes.length === 0) { toast.error('Agregá al menos un código CIE-10'); return; }
     setSaving(true);
     try {
       const res = await api.post<{ id: string }>('/evolutions', {

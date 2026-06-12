@@ -86,7 +86,7 @@ export default function DoctorPatientDetailPage({
                 <CardContent className="text-xs space-y-2">
                   <p><strong>S:</strong> {evo.soapData.subjective}</p>
                   <p><strong>O:</strong> {evo.soapData.objective}</p>
-                  <p><strong>A:</strong> {evo.soapData.assessment.text} [{evo.soapData.assessment.cie10Codes.join(', ')}]</p>
+                  <p><strong>A:</strong> {evo.soapData.assessment.text}{evo.soapData.assessment.cie10Codes.length > 0 ? ` [${evo.soapData.assessment.cie10Codes.join(', ')}]` : ''}</p>
                   <p><strong>P:</strong> {evo.soapData.plan}</p>
                 </CardContent>
               </Card>
