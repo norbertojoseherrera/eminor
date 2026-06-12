@@ -23,7 +23,7 @@ test.describe('Autenticación', () => {
   test('credenciales incorrectas muestra error', async ({ page }) => {
     await page.goto('/login', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(1000);
-    await page.locator('#email').fill('paciente@eminor.com');
+    await page.locator('#email').fill('alopez@eminor.com');
     await page.locator('#password').fill('WrongPass1!');
     await page.locator('button[type="submit"]').click();
     await page.waitForTimeout(3000);
@@ -47,7 +47,7 @@ test.describe('Autenticación', () => {
   test('sidebar muestra rol correcto para paciente', async ({ page }) => {
     await loginAs(page, 'patient');
     await expect(page.locator('text=PATIENT')).toBeVisible();
-    await expect(page.locator('text=paciente@eminor.com')).toBeVisible();
+    await expect(page.locator('text=alopez@eminor.com')).toBeVisible();
   });
 
   test('sidebar de médico no muestra opciones de paciente', async ({ page }) => {

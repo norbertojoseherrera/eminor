@@ -144,10 +144,10 @@ async function main() {
 
   const patientHash = await bcrypt.hash('Patient1234!', 12);
   const patient = await prisma.user.upsert({
-    where: { email: 'paciente@eminor.com' },
+    where: { email: 'alopez@eminor.com' },
     update: {},
     create: {
-      email: 'paciente@eminor.com',
+      email: 'alopez@eminor.com',
       passwordHash: patientHash,
       role: Role.PATIENT,
       patient: {
@@ -212,7 +212,7 @@ async function main() {
   console.log('  Doctor:  sgomez@eminor.com     / Doctor1234!  (Dermatología)');
   console.log('  Doctor:  dtorres@eminor.com    / Doctor1234!  (Ginecología)');
   console.log('  Doctor:  vruiz@eminor.com      / Doctor1234!  (Traumatología)');
-  console.log('  Patient: paciente@eminor.com   / Patient1234!');
+  console.log('  Patient: alopez@eminor.com   / Patient1234!');
 }
 
 main()

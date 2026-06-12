@@ -38,7 +38,7 @@ cd apps/frontend && npx playwright test --ui   # modo visual
 
 | # | Caso | Pasos | Resultado esperado |
 |---|------|-------|--------------------|
-| 1.1 | Login paciente | Email: paciente@eminor.com / Patient1234! | Redirige a /patient/appointments, sidebar muestra PATIENT |
+| 1.1 | Login paciente | Email: alopez@eminor.com / Patient1234! | Redirige a /patient/appointments, sidebar muestra PATIENT |
 | 1.2 | Login médico | Email: rsanchez@eminor.com / Doctor1234! | Redirige a /doctor/schedule, sidebar muestra DOCTOR |
 | 1.3 | Login admin | Email: admin@eminor.com / Admin1234! | Redirige a /admin/users, sidebar muestra ADMIN |
 | 1.4 | Contraseña incorrecta | Login con pass erróneo | Toast de error, permanece en /login |
